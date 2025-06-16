@@ -5,9 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface CrawlHistoryRepository extends JpaRepository<CrawlHistory, Long> {
-
-    /**
-     * 根据用户ID查找其所有的爬取历史，并按时间降序排列。
-     */
+    // 查找某个用户的所有爬取历史
     List<CrawlHistory> findByUserIdOrderByCrawlTimeDesc(Long userId);
 }

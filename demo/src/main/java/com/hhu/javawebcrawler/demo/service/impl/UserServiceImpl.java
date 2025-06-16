@@ -44,4 +44,11 @@ import org.springframework.stereotype.Service;
 
          return user; // 登录成功，返回用户信息
      }
+
+     @Override
+     public User findByUsername(String username) throws Exception {
+         return userRepository.findByUsername(username)
+                 .orElseThrow(() -> new Exception("用户 " + username + " 不存在"));
+     }
+
  }

@@ -3,38 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <title>Java Web 爬虫系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 960px;
+            margin: 20px auto;
+            padding: 0 15px;
+            color: #333;
+            background-color: #f4f4f9;
+        }
+        h1, h2, h3, h4 {
+            color: #1a237e;
+        }
+        a {
+            color: #3f51b5;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 模块样式 */
+        .module {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* 输入和按钮 */
+        input[type="url"] {
+            width: calc(100% - 120px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #3f51b5;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        button:hover {
+            background-color: #303f9f;
+        }
+        button:disabled {
+            background-color: #9fa8da;
+            cursor: not-allowed;
+        }
+
+        /* 用户信息和状态 */
+        #user-info {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        #logout-button {
+            background-color: #d32f2f;
+        }
+        #logout-button:hover {
+            background-color: #c62828;
+        }
+        .status-message {
+            color: #555;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        /* 结果区域 */
+        #result-section {
+            margin-top: 20px;
+        }
+        #result-content {
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #fdfdfd;
+        }
+        #result-content p {
+            line-height: 1.6;
+            text-indent: 2em; /* 首行缩进 */
+        }
+        
+        /* 历史记录 */
+        #history-list ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #history-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        #history-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body>
+
     <div id="user-info"></div>
-    <button id="logout-button" style="display:none;">退出登录</button>
-    
+
     <hr>
+
+    <h1>欢迎来到新浪新闻爬虫系统</h1>
+
+    <!-- 爬虫输入模块 -->
+    <div class="module">
+        <h2>单URL爬取</h2>
+        <input type="url" id="crawl-url" placeholder="请输入完整的新浪新闻URL，例如: https://news.sina.com.cn/c/...">
+        <button id="crawl-button" disabled>开始爬取</button>
+        <p id="crawl-status" class="status-message"></p>
+    </div>
+
+    <!-- 结果展示模块 -->
+    <div id="result-section" class="module" style="display:none;">
+        <h3>爬取结果</h3>
+        <h4 id="result-title"></h4>
+        <p>
+            <strong>来源：</strong><span id="result-source"></span> |
+            <strong>发布时间：</strong><span id="result-time"></span>
+        </p>
+        <p><strong>关键词：</strong><span id="result-keywords"></span></p>
+
+        <div id="result-content"></div>
+
+        <div style="margin-top: 20px;">
+            <button id="export-word-button">导出为 Word (.docx)</button>
+            <button id="export-pdf-button">导出为 PDF</button>
+        </div>
+    </div>
+
+    <!-- 历史记录模块 -->
+    <div class="module">
+        <h2>爬取历史</h2>
+        <button id="history-button" disabled>查看我的历史记录</button>
+        <p id="history-status" class="status-message"></p>
+        <div id="history-list"></div>
+    </div>
     
-    <h1>欢迎来到爬虫系统</h1>
-    <!-- 后续爬虫相关的功能将在这里添加 -->
+    <div style="text-align: right; margin-top: 20px;">
+        <button id="logout-button" style="display:none;">退出登录</button>
+    </div>
+
 
     <script>
+        // 全局变量，用于存储最后一次成功爬取的URL和当前用户信息
+        let lastCrawledUrl = '';
+        let currentUser = null;
+
+        // 获取DOM元素
+        const userInfoEl = document.getElementById('user-info');
+        const logoutBtn = document.getElementById('logout-button');
+        const crawlUrlInput = document.getElementById('crawl-url');
+        const crawlBtn = document.getElementById('crawl-button');
+        const crawlStatus = document.getElementById('crawl-status');
+        const historyBtn = document.getElementById('history-button');
+        const historyStatus = document.getElementById('history-status');
+        const historyList = document.getElementById('history-list');
+        
+        // 结果区域元素
+        const resultSection = document.getElementById('result-section');
+        const resultTitle = document.getElementById('result-title');
+        const resultSource = document.getElementById('result-source');
+        const resultTime = document.getElementById('result-time');
+        const resultKeywords = document.getElementById('result-keywords');
+        const resultContent = document.getElementById('result-content');
+        const exportWordBtn = document.getElementById('export-word-button');
+        const exportPdfBtn = document.getElementById('export-pdf-button');
+
+
         // 页面加载时，检查用户登录状态
         window.onload = async function() {
-            const response = await fetch('/api/user/current');
-            const userInfoEl = document.getElementById('user-info');
-            const logoutBtn = document.getElementById('logout-button');
+            try {
+                // 注意：在实际项目中，后端应配置为 /api/** 的路径都需要认证
+                const response = await fetch('/api/user/current');
 
-            if (response.ok) {
-                const userInfo = await response.json();
-                userInfoEl.innerHTML = `欢迎您，<strong>${userInfo.username}</strong>！`;
-                logoutBtn.style.display = 'inline-block';
-            } else {
-                userInfoEl.innerHTML = '您还未登录，请 <a href="/login.html">登录</a>';
+                if (response.ok) {
+                    currentUser = await response.json();
+                    userInfoEl.innerHTML = `欢迎您，<strong>${currentUser.username}</strong>！`;
+                    logoutBtn.style.display = 'inline-block';
+                    crawlBtn.disabled = false;
+                    historyBtn.disabled = false;
+                } else {
+                    userInfoEl.innerHTML = '您还未登录，请 <a href="/login.html">登录</a> 或 <a href="/register.html">注册</a>';
+                    crawlStatus.textContent = "登录后方可使用爬虫功能。";
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+                userInfoEl.innerHTML = '无法连接到服务器。请检查网络或联系管理员。';
             }
         };
 
         // 退出登录
-        document.getElementById('logout-button').addEventListener('click', async () => {
+        logoutBtn.addEventListener('click', async () => {
             await fetch('/api/user/logout', { method: 'POST' });
             alert('您已成功退出！');
             window.location.href = '/login.html';
         });
+        
+        // 开始爬取按钮事件
+        crawlBtn.addEventListener('click', async () => {
+            const url = crawlUrlInput.value.trim();
+            if (!url) {
+                crawlStatus.textContent = "URL不能为空！";
+                return;
+            }
+
+            crawlStatus.textContent = '正在爬取中，请稍候...';
+            crawlBtn.disabled = true;
+            resultSection.style.display = 'none';
+
+            try {
+                // 注意：后端应通过Session或Token获取userId，前端不需要传递
+                const response = await fetch('/api/crawl/single', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url }) // 移除 userId
+                });
+
+                if (response.ok) {
+                    const newsData = await response.json();
+                    displayResults(newsData);
+                    crawlStatus.textContent = '爬取成功！';
+                    lastCrawledUrl = newsData.url; // 保存URL以供导出
+                } else {
+                    const errorText = await response.text();
+                    console.error("爬取失败:", errorText);
+                    crawlStatus.textContent = `爬取失败（状态码: ${response.status}）。请检查URL是否正确或稍后再试。`;
+                }
+
+            } catch (error) {
+                console.error('爬取请求失败:', error);
+                crawlStatus.textContent = '请求发送失败，请检查网络连接。';
+            } finally {
+                crawlBtn.disabled = false;
+            }
+        });
+
+        // 显示爬取结果的函数
+        function displayResults(data) {
+            resultTitle.textContent = data.title;
+            resultSource.textContent = data.source || '未知';
+            resultTime.textContent = new Date(data.publishTime).toLocaleString('zh-CN');
+            resultKeywords.textContent = data.keywords || '无';
+            resultContent.innerHTML = data.content; // 使用innerHTML来渲染HTML标签
+            resultSection.style.display = 'block';
+        }
+        
+        // 导出Word按钮事件
+        exportWordBtn.addEventListener('click', () => {
+            if (!lastCrawledUrl) return;
+            const exportUrl = `/api/export?url=${encodeURIComponent(lastCrawledUrl)}&format=word`;
+            window.location.href = exportUrl; // 浏览器将自动处理文件下载
+        });
+
+        // 导出PDF按钮事件
+        exportPdfBtn.addEventListener('click', () => {
+            if (!lastCrawledUrl) return;
+            const exportUrl = `/api/export?url=${encodeURIComponent(lastCrawledUrl)}&format=pdf`;
+            window.location.href = exportUrl;
+        });
+        
+        // 查看历史记录按钮事件
+        historyBtn.addEventListener('click', async () => {
+            historyStatus.textContent = "正在加载历史记录...";
+            historyList.innerHTML = ""; // 清空旧数据
+
+            try {
+                // 同样，后端通过认证信息获取用户，而不是依赖前端传ID
+                const response = await fetch(`/api/history`); // 移除 userId
+                
+                if (response.ok) {
+                    const historyData = await response.json();
+                    renderHistory(historyData);
+                    historyStatus.textContent = "";
+                } else {
+                    historyStatus.textContent = "加载历史记录失败。";
+                }
+            } catch (error) {
+                console.error('加载历史失败:', error);
+                historyStatus.textContent = "请求历史记录失败，请检查网络。";
+            }
+        });
+
+        // 渲染历史记录列表的函数
+        function renderHistory(data) {
+            if (!data || data.length === 0) {
+                historyList.innerHTML = "<p>暂无历史记录。</p>";
+                return;
+            }
+            const ul = document.createElement('ul');
+            data.forEach(item => {
+                const li = document.createElement('li');
+                const time = new Date(item.crawlTime).toLocaleString('zh-CN');
+                // 让标题也能点击重新爬取
+                const titleLink = document.createElement('a');
+                titleLink.href = '#';
+                titleLink.textContent = item.title || item.url;
+                titleLink.onclick = (e) => {
+                    e.preventDefault(); // 阻止a标签默认跳转
+                    crawlUrlInput.value = item.url;
+                    crawlBtn.click(); // 触发爬取事件
+                    window.scrollTo(0, 0); // 滚动到页面顶部
+                };
+                
+                li.innerHTML = `[${time}] - `;
+                li.appendChild(titleLink);
+                ul.appendChild(li);
+            });
+            historyList.appendChild(ul);
+        }
+
     </script>
 </body>
 </html>

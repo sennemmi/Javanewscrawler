@@ -1,36 +1,79 @@
-<!-- login.html 修改版 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <title>用户登录</title>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #3f51b5; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #303f9f; }
+        #error-message { color: red; margin-bottom: 15px; text-align: center; }
+        a { display: block; text-align: center; margin-top: 15px; }
+    </style>
 </head>
 <body>
     <h1>用户登录</h1>
-
-    <!-- 检查URL中是否有error参数，如果有就显示错误信息 -->
-    <div id="error-message" style="color:red;"></div>
     
-    <!-- form的action指向/login，method为post -->
-    <form action="/login" method="post" id="login-form">
+    <div id="error-message"></div>
+    
+    <!-- 移除 form 标签的 action 和 method -->
+    <form id="login-form">
         <label for="username">用户名:</label>
-        <!-- input的name必须是username -->
-        <input type="text" id="username" name="username" required><br><br>
+        <input type="text" id="username" name="username" required><br>
+        
         <label for="password">密码:</label>
-        <!-- input的name必须是password -->
         <input type="password" id="password" name="password" required><br><br>
+        
         <button type="submit">登录</button>
     </form>
+    
     <a href="/register.html">没有账户？去注册</a>
 
     <script>
-        // 这段JS用于在登录失败时显示错误提示
+        const loginForm = document.getElementById('login-form');
+        const errorMessageEl = document.getElementById('error-message');
+
+        loginForm.addEventListener('submit', async (event) => {
+            // 阻止表单的默认提交行为
+            event.preventDefault();
+
+            // 清空旧的错误信息
+            errorMessageEl.textContent = '';
+
+            const formData = new URLSearchParams(new FormData(loginForm)).toString();
+
+            try {
+                // 使用 fetch API 向后端配置的 /api/user/login 发送请求
+                const response = await fetch('/api/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData,
+                });
+
+                // 检查响应状态
+                if (response.ok) {
+                    // 登录成功
+                    const result = await response.json();
+                    alert(result.message || '登录成功！'); // 显示成功信息
+                    window.location.href = '/index.html'; // 跳转到主页
+                } else {
+                    // 登录失败 (例如 401 Unauthorized)
+                    const errorResult = await response.json();
+                    errorMessageEl.textContent = errorResult.message || '登录失败，请重试。';
+                }
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                errorMessageEl.textContent = '无法连接到服务器，请检查网络。';
+            }
+        });
+
+        // 这段JS用于处理从其他页面跳转过来时URL中的参数
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('error')) {
-            document.getElementById('error-message').textContent = '用户名或密码错误！';
-        }
         if (urlParams.has('logout')) {
-            document.getElementById('error-message').textContent = '您已成功退出。';
+            errorMessageEl.textContent = '您已成功退出。';
         }
     </script>
 </body>

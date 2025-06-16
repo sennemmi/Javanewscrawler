@@ -3,11 +3,10 @@ import lombok.Data;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * 新闻数据实体类，映射 t_news_data 表
- */
 @Entity
-@Table(name = "t_news_data")
+@Table(name = "t_news_data", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"url"})
+})
 @Data
 public class NewsData {
 
@@ -15,28 +14,24 @@ public class NewsData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 768)// 数据不能为空且必须唯一，长度为768
+    @Column(length = 768, nullable = false)
     private String url;
 
+    @Column(length = 255)
     private String title;
 
-    @Column(length = 100)//长度为100
-    private String source;//新闻来源
+    @Column(length = 100)
+    private String source;
 
-    @Column(name = "publish_time")
-    private LocalDateTime publishTime;//新闻发布时间
+    private LocalDateTime publishTime;
 
-    @Lob
-    @Column(columnDefinition = "LONGTEXT") // 明确指定为LONGTEXT以存储长文章
+    @Lob // 表示这是一个大对象，映射到 LONGTEXT
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
-    private String keywords;//新闻关键词
+    @Column(length = 255)
+    private String keywords;
 
-    @Column(name = "fetch_time", nullable = false, updatable = false)
-    private LocalDateTime fetchTime;//抓取时间
-
-    @PrePersist
-    protected void onCreate() {
-        this.fetchTime = LocalDateTime.now();
-    }
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime fetchTime = LocalDateTime.now();
 }
