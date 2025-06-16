@@ -1,0 +1,37 @@
+<!-- login.html 修改版 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户登录</title>
+</head>
+<body>
+    <h1>用户登录</h1>
+
+    <!-- 检查URL中是否有error参数，如果有就显示错误信息 -->
+    <div id="error-message" style="color:red;"></div>
+    
+    <!-- form的action指向/login，method为post -->
+    <form action="/login" method="post" id="login-form">
+        <label for="username">用户名:</label>
+        <!-- input的name必须是username -->
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="password">密码:</label>
+        <!-- input的name必须是password -->
+        <input type="password" id="password" name="password" required><br><br>
+        <button type="submit">登录</button>
+    </form>
+    <a href="/register.html">没有账户？去注册</a>
+
+    <script>
+        // 这段JS用于在登录失败时显示错误提示
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            document.getElementById('error-message').textContent = '用户名或密码错误！';
+        }
+        if (urlParams.has('logout')) {
+            document.getElementById('error-message').textContent = '您已成功退出。';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册</title>
+</head>
+<body>
+    <h1>用户注册</h1>
+    <form id="register-form">
+        <label for="username">用户名:</label>
+        <input type="text" id="username" name="username" required><br><br>
+        <label for="password">密码:</label>
+        <input type="password" id="password" name="password" required><br><br>
+        <button type="submit">注册</button>
+    </form>
+    <p id="message"></p>
+    <a href="/login.html">已有账户？去登录</a>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async function (e) {
+            e.preventDefault(); // 阻止表单默认提交
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('message');
+
+            const response = await fetch('/api/user/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (response.ok) {
+                messageEl.style.color = 'green';
+                messageEl.textContent = await response.text();
+                setTimeout(() => window.location.href = '/login.html', 1500); // 1.5秒后跳转
+            } else {
+                messageEl.style.color = 'red';
+                messageEl.textContent = '注册失败: ' + await response.text();
+            }
+        });
+    </script>
+</body>
+</html>

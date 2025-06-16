@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Java Web 爬虫系统</title>
+</head>
+<body>
+    <div id="user-info"></div>
+    <button id="logout-button" style="display:none;">退出登录</button>
+    
+    <hr>
+    
+    <h1>欢迎来到爬虫系统</h1>
+    <!-- 后续爬虫相关的功能将在这里添加 -->
+
+    <script>
+        // 页面加载时，检查用户登录状态
+        window.onload = async function() {
+            const response = await fetch('/api/user/current');
+            const userInfoEl = document.getElementById('user-info');
+            const logoutBtn = document.getElementById('logout-button');
+
+            if (response.ok) {
+                const userInfo = await response.json();
+                userInfoEl.innerHTML = `欢迎您，<strong>${userInfo.username}</strong>！`;
+                logoutBtn.style.display = 'inline-block';
+            } else {
+                userInfoEl.innerHTML = '您还未登录，请 <a href="/login.html">登录</a>';
+            }
+        };
+
+        // 退出登录
+        document.getElementById('logout-button').addEventListener('click', async () => {
+            await fetch('/api/user/logout', { method: 'POST' });
+            alert('您已成功退出！');
+            window.location.href = '/login.html';
+        });
+    </script>
+</body>
+</html>
