@@ -1,328 +1,1572 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Java Web 爬虫系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCrawlerPro</title>
     <style>
-        /* 基础样式 */
+        :root[data-theme="light"] {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --input-bg: #f1f5f9;
+            --input-border: #e2e8f0;
+            --label-color: #64748b;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #e2e8f0;
+            --nav-hover: #e2e8f0;
+            --nav-active: #3b82f6;
+            --content-bg: #f8fafc;
+            --panel-bg: #ffffff;
+            --panel-border: #e2e8f0;
+            --toggle-btn-bg: #ffffff;
+            --toggle-btn-border: #e2e8f0;
+            --toggle-btn-color: #64748b;
+        }
+
+        :root[data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #191c23;
+            --text-color: #e2e8f0;
+            --input-bg: #23242a;
+            --input-border: #2f3336;
+            --label-color: #94a3b8;
+            --shadow-color: rgba(0, 0, 0, 0.32);
+            --sidebar-bg: #000000;
+            --sidebar-border: #333333;
+            --nav-hover: #334155;
+            --nav-active: #3b82f6;
+            --content-bg: #1a1a1a;
+            --panel-bg: #1e293b;
+            --panel-border: #334155;
+            --toggle-btn-bg: #000000;
+            --toggle-btn-border: #333333;
+            --toggle-btn-color: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            max-width: 960px;
-            margin: 20px auto;
-            padding: 0 15px;
-            color: #333;
-            background-color: #f4f4f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            position: relative;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        h1, h2, h3, h4 {
-            color: #1a237e;
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            z-index: 1000;
         }
-        a {
-            color: #3f51b5;
-            text-decoration: none;
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
         }
-        a:hover {
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-color);
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            height: 100vh;
+            padding: 20px;
+            border-right: 1px solid var(--sidebar-border);
+            transition: all 0.3s ease;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+            padding: 20px 10px;
+        }
+
+        .sidebar.collapsed .logo span,
+        .sidebar.collapsed .nav-title,
+        .sidebar.collapsed .nav-item span,
+        .sidebar.collapsed .history-item .title,
+        .sidebar.collapsed .history-item .time,
+        .sidebar.collapsed .history-item .history-content,
+        .sidebar.collapsed .history-list,
+        .sidebar.collapsed .expandable-content {
+            display: none !important;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 10px 0;
+            margin-bottom: 5px;
+            width: 40px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .sidebar.collapsed .nav-item svg {
+            margin: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        .sidebar.collapsed .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .sidebar.collapsed .logo {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .logo svg {
+            margin: 0;
+            width: 24px;
+            height: 24px;
+        }
+
+        .toggle-sidebar {
+            position: fixed;
+            left: 248px;
+            top: 20px;
+            width: 24px;
+            height: 24px;
+            background: var(--toggle-btn-bg);
+            border: 1px solid var(--toggle-btn-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--toggle-btn-color);
+            transition: all 0.2s;
+            z-index: 9999;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .sidebar.collapsed .toggle-sidebar {
+            left: 48px;
+        }
+
+        .toggle-sidebar:hover {
+            background: var(--nav-hover);
+            color: var(--text-color);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+
+        .toggle-sidebar svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 10000;
+        }
+
+        .sidebar:not(.collapsed) .toggle-sidebar svg {
+            transform: rotate(180deg);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: #60a5fa !important;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .logo svg {
+            width: 24px;
+            height: 24px;
+            color: #60a5fa !important;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--label-color);
+        }
+
+        .nav-item:hover {
+            background: var(--nav-hover);
+            color: var(--text-color);
+        }
+
+        .nav-item.active {
+            background: var(--nav-active);
+            color: #fff;
+        }
+
+        .nav-item svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 100vh;
+            background: var(--content-bg);
+            margin-left: 260px;
+            transition: margin-left 0.3s ease, background-color 0.3s ease;
+            z-index: 1;
+        }
+
+        .sidebar.collapsed + .main-content {
+            margin-left: 60px;
+        }
+
+        /* 用户状态样式 */
+        .user-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .user-status .btn {
+            padding: 0 22px;
+            height: 40px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, color 0.2s;
+            box-shadow: none;
+        }
+        .user-status .btn.btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        .user-status .btn.btn-secondary:hover {
+            background: #475569;
+            color: #fff;
+        }
+        .user-status .btn.btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .user-status .btn.btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .user-status .auth-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .user-status .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e2e8f0;
+        }
+
+        .user-status .user-info .username {
+            font-weight: 500;
+        }
+
+        .user-status .user-info .logout {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .user-status .user-info .logout:hover {
             text-decoration: underline;
         }
 
-        /* 模块样式 */
-        .module {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        /* 新极简搜索区域样式 */
+        .search-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 600px;
+            padding: 0 20px;
+            z-index: 10;
+            background: none;
+            box-shadow: none;
+            transition: all 0.5s cubic-bezier(.4,2,.6,1);
         }
 
-        /* 输入和按钮 */
-        input[type="url"] {
-            width: calc(100% - 120px);
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px;
+        .search-container.active {
+            top: 85%;
+            transform: translate(-50%, 0);
+            opacity: 0.7;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #3f51b5;
+
+        .search-container.active:hover {
+            opacity: 1;
+        }
+
+        .search-title {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--text-color);
+            text-align: center;
+            width: 100%;
+            margin-bottom: 18px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-container.active .search-title {
+            display: none;
+        }
+
+        .search-box {
+            background: var(--input-bg);
+            border-radius: 48px;
+            padding: 0;
+            box-shadow: none;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            width: 100%;
+            height: 80px;
+            max-width: 800px;
+            transition: background-color 0.3s ease;
+            border: 1px solid var(--input-border);
+        }
+
+        .url-input {
+            flex: 1;
+            background: transparent;
             border: none;
-            border-radius: 4px;
+            border-radius: 48px 0 0 48px;
+            padding: 0 36px;
+            color: var(--text-color);
+            font-size: 28px;
+            height: 100%;
+            outline: none;
+            transition: color 0.3s ease;
+        }
+
+        .url-input:focus {
+            border: none;
+            box-shadow: none;
+            background: var(--input-bg);
+        }
+
+        .url-input::placeholder {
+            color: var(--label-color);
+        }
+
+        .toolbar-buttons {
+            display: flex;
+            gap: 18px;
+            height: 100%;
+            align-items: center;
+            margin-right: 18px;
+        }
+
+        .icon-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-        button:hover {
-            background-color: #303f9f;
-        }
-        button:disabled {
-            background-color: #9fa8da;
-            cursor: not-allowed;
+            transition: all 0.2s;
+            color: var(--label-color);
+            font-size: 0;
         }
 
-        /* 用户信息和状态 */
-        #user-info {
-            text-align: right;
-            margin-bottom: 10px;
-        }
-        #logout-button {
-            background-color: #d32f2f;
-        }
-        #logout-button:hover {
-            background-color: #c62828;
-        }
-        .status-message {
-            color: #555;
-            font-style: italic;
-            margin-top: 10px;
+        .icon-btn svg {
+            width: 32px;
+            height: 32px;
+            display: block;
         }
 
-        /* 结果区域 */
-        #result-section {
-            margin-top: 20px;
+        .icon-btn:hover {
+            background: var(--nav-hover);
+            color: var(--nav-active);
+            transform: scale(1.1);
         }
-        #result-content {
-            border: 1px solid #eee;
-            padding: 15px;
+
+        @media (max-width: 600px) {
+            .search-box { 
+                max-width: 100%; 
+                height: 56px; 
+            }
+            .url-input { 
+                font-size: 18px; 
+                padding: 0 14px; 
+            }
+            .icon-btn { 
+                width: 36px; 
+                height: 36px; 
+            }
+            .icon-btn svg { 
+                width: 20px; 
+                height: 20px; 
+            }
+        }
+
+        /* 内容区域 */
+        .content-area {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease, background-color 0.3s ease;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+            width: 100%;
+            height: auto;
+            top: 50%;
+            margin-top: -200px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+        }
+
+        .content-area.active {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .panel-content {
+            color: var(--text-color);
+            font-size: 14px;
+            line-height: 1.7;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 10px;
+            max-height: 60vh;
+        }
+
+        .panel-content::-webkit-scrollbar { 
+            width: 6px; 
+        }
+
+        .panel-content::-webkit-scrollbar-track { 
+            background: var(--input-bg); 
+            border-radius: 3px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb { 
+            background: var(--nav-hover); 
+            border-radius: 3px; 
+        }
+
+        .panel-content::-webkit-scrollbar-thumb:hover { 
+            background: var(--nav-active); 
+        }
+
+        /* 历史记录列表 */
+        .history-list {
+            list-style: none;
             margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        /* 自定义滚动条样式 */
+        .history-list::-webkit-scrollbar { width: 6px; }
+        .history-list::-webkit-scrollbar-track { background: #000000; border-radius: 3px; }
+        .history-list::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+        .history-list::-webkit-scrollbar-thumb:hover { background: #444444; }
+
+        .history-item {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            background: var(--sidebar-bg);
+            position: relative;
+        }
+
+        .history-item:hover {
+            background: var(--nav-hover);
+        }
+
+        .history-item .history-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .history-item .title {
+            color: var(--label-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-item:hover .title {
+            color: var(--text-color);
+        }
+
+        .history-item .time {
+            color: var(--label-color);
+            font-size: 11px;
+        }
+
+        /* 结果展示 */
+        .result-content {
+            white-space: pre-wrap;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .result-content strong {
+            color: var(--nav-active);
+            font-size: 16px;
+            display: block;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .result-content div {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--input-bg);
+            border-radius: 8px;
+            border: 1px solid var(--input-border);
+        }
+
+        .result-content .content-html {
+            background: var(--panel-bg);
+            padding: 16px;
+            border-radius: 8px;
             max-height: 400px;
             overflow-y: auto;
-            background-color: #fdfdfd;
+            white-space: normal;
+            border: 1px solid var(--panel-border);
         }
-        #result-content p {
+
+        .result-content .content-html::-webkit-scrollbar { 
+            width: 6px; 
+        }
+
+        .result-content .content-html::-webkit-scrollbar-track { 
+            background: var(--input-bg); 
+            border-radius: 3px;
+        }
+
+        .result-content .content-html::-webkit-scrollbar-thumb { 
+            background: var(--nav-hover); 
+            border-radius: 3px; 
+        }
+
+        .result-content .content-html::-webkit-scrollbar-thumb:hover { 
+            background: var(--nav-active); 
+        }
+
+        .result-content .content-html p {
+            margin-bottom: 0.8em;
             line-height: 1.6;
-            text-indent: 2em; /* 首行缩进 */
+            color: var(--text-color);
         }
-        
-        /* 历史记录 */
-        #history-list ul {
-            list-style-type: none;
-            padding-left: 0;
+
+        .result-content .content-html h1,
+        .result-content .content-html h2,
+        .result-content .content-html h3,
+        .result-content .content-html h4 {
+            color: var(--text-color);
+            margin: 1em 0 0.5em;
+            line-height: 1.4;
         }
-        #history-list li {
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
+
+        .result-content .content-html a {
+            color: var(--nav-active);
+            text-decoration: none;
         }
-        #history-list li:last-child {
-            border-bottom: none;
+
+        .result-content .content-html a:hover {
+            text-decoration: underline;
+        }
+
+        .result-content .content-html img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin: 0.8em 0;
+        }
+
+        .result-content .content-html blockquote {
+            margin: 0.8em 0;
+            padding: 0.8em;
+            border-left: 4px solid var(--nav-active);
+            background: var(--input-bg);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .result-content .content-html code {
+            background: var(--input-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 0.9em;
+        }
+
+        .result-content .content-html pre {
+            background: var(--input-bg);
+            padding: 0.8em;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 0.8em 0;
+        }
+
+        .result-content .content-html pre code {
+            background: none;
+            padding: 0;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 保存对话框样式 */
+        .save-dialog, .favorite-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            z-index: 1000;
+            display: none;
+            width: 400px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .save-dialog.active, .favorite-dialog.active {
+            display: block;
+        }
+
+        .save-dialog-header, .favorite-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .save-dialog-title, .favorite-dialog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .save-dialog-close, .favorite-dialog-close {
+            color: var(--label-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .save-dialog-close:hover, .favorite-dialog-close:hover {
+            background: var(--nav-hover);
+            color: var(--text-color);
+            transform: rotate(90deg);
+        }
+
+        .save-options {
+            display: flex;
+            gap: 12px;
+        }
+
+        .save-option {
+            flex: 1;
+            padding: 16px;
+            background: var(--nav-hover);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            border: 1px solid var(--input-border);
+        }
+
+        .save-option:hover {
+            background: var(--nav-active);
+            transform: translateY(-2px);
+            border-color: var(--nav-active);
+        }
+
+        .save-option svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 8px;
+            color: var(--label-color);
+        }
+
+        .save-option:hover svg { 
+            color: #ffffff; 
+        }
+
+        .save-option-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .save-option:hover .save-option-title {
+            color: #ffffff;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            display: none;
+            animation: fadeInOverlay 0.3s ease;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 展开内容样式 */
+        .expandable-content {
+            display: none;
+            padding: 12px;
+            margin-top: 8px;
+            background: var(--sidebar-bg);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-color);
+            line-height: 1.6;
+            animation: slideDown 0.3s ease;
+        }
+
+        .expandable-content.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-item.expandable-item.active {
+            background: var(--nav-hover);
+            color: var(--text-color);
+        }
+
+        .nav-item.expandable-item.active svg {
+            color: var(--nav-active);
+        }
+
+        .favorites-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .favorite-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            background: var(--sidebar-bg);
+            transition: all 0.2s;
+        }
+
+        .favorite-item:hover { 
+            background: var(--nav-hover); 
+        }
+
+        .favorite-url {
+            color: var(--nav-active);
+            text-decoration: none;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-right: 8px;
+        }
+
+        .favorite-url:hover { 
+            text-decoration: underline; 
+        }
+
+        .favorite-btn { 
+            color: var(--label-color); 
+            cursor: pointer; 
+            padding: 4px; 
+            border-radius: 4px; 
+        }
+
+        .favorite-btn:hover { 
+            background: rgba(239, 68, 68, 0.1); 
+            color: #ef4444; 
+        }
+
+        .empty-favorites { 
+            text-align: center; 
+            padding: 20px; 
+            color: var(--label-color); 
+        }
+
+        .add-favorite-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            border-radius: 4px;
+            background: var(--nav-hover);
+            color: var(--nav-active);
+            cursor: pointer;
+            transition: all 0.2s;
+            justify-content: center;
+        }
+
+        .add-favorite-btn:hover { 
+            background: var(--nav-active); 
+            color: #fff;
+        }
+
+        .add-favorite-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 收藏弹窗 */
+        .favorite-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            z-index: 1000;
+            display: none;
+            width: 400px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .favorite-dialog.active {
+            display: block;
+        }
+
+        .favorite-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .favorite-dialog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .favorite-dialog-close {
+            color: var(--label-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .favorite-dialog-close:hover {
+            background: var(--nav-hover);
+            color: var(--text-color);
+            transform: rotate(90deg);
+        }
+
+        .favorite-dialog-input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-color);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .favorite-dialog-input:focus { 
+            outline: none; 
+            border-color: var(--nav-active); 
+        }
+
+        .favorite-dialog-footer { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 12px; 
+        }
+
+        .favorite-dialog-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .favorite-dialog-btn.cancel { 
+            background: var(--nav-hover); 
+            color: var(--text-color); 
+        }
+
+        .favorite-dialog-btn.cancel:hover { 
+            background: var(--input-border); 
+        }
+
+        .favorite-dialog-btn.save { 
+            background: var(--nav-active); 
+            color: #ffffff; 
+        }
+
+        .favorite-dialog-btn.save:hover { 
+            background: #2563eb; 
         }
     </style>
 </head>
 <body>
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" id="themeToggle" title="切换主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+    </button>
 
-    <div id="user-info"></div>
+    <!-- 遮罩层 -->
+    <div class="overlay" id="overlay"></div>
 
-    <hr>
-
-    <h1>欢迎来到新浪新闻爬虫系统</h1>
-
-    <!-- 爬虫输入模块 -->
-    <div class="module">
-        <h2>单URL爬取</h2>
-        <input type="url" id="crawl-url" placeholder="请输入完整的新浪新闻URL，例如: https://news.sina.com.cn/c/...">
-        <button id="crawl-button" disabled>开始爬取</button>
-        <p id="crawl-status" class="status-message"></p>
-    </div>
-
-    <!-- 结果展示模块 -->
-    <div id="result-section" class="module" style="display:none;">
-        <h3>爬取结果</h3>
-        <h4 id="result-title"></h4>
-        <p>
-            <strong>来源：</strong><span id="result-source"></span> |
-            <strong>发布时间：</strong><span id="result-time"></span>
-        </p>
-        <p><strong>关键词：</strong><span id="result-keywords"></span></p>
-
-        <div id="result-content"></div>
-
-        <div style="margin-top: 20px;">
-            <button id="export-word-button">导出为 Word (.docx)</button>
-            <button id="export-pdf-button">导出为 PDF</button>
+    <!-- 保存对话框 -->
+    <div class="save-dialog" id="saveDialog">
+        <div class="save-dialog-header">
+            <div class="save-dialog-title">保存结果</div>
+            <div class="save-dialog-close" id="closeSaveDialog">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+        </div>
+        <div class="save-options">
+            <div class="save-option" id="savePdf">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <div class="save-option-title">保存为 PDF</div>
+            </div>
+            <div class="save-option" id="saveWord">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M11.25 19.5h1.5m-3-3h6m-6-3h6m-6-3h6"></path>
+                </svg>
+                <div class="save-option-title">保存为 Word</div>
+            </div>
         </div>
     </div>
 
-    <!-- 历史记录模块 -->
-    <div class="module">
-        <h2>爬取历史</h2>
-        <button id="history-button" disabled>查看我的历史记录</button>
-        <p id="history-status" class="status-message"></p>
-        <div id="history-list"></div>
-    </div>
-    
-    <div style="text-align: right; margin-top: 20px;">
-        <button id="logout-button" style="display:none;">退出登录</button>
+    <!-- 收藏弹窗 -->
+    <div class="favorite-dialog" id="favoriteDialog">
+        <div class="favorite-dialog-header">
+            <div class="favorite-dialog-title">添加收藏</div>
+            <div class="favorite-dialog-close" id="closeFavoriteDialog">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </div>
+        </div>
+        <div class="favorite-dialog-content">
+            <input type="text" class="favorite-dialog-input" id="favoriteUrlInput" placeholder="输入要收藏的网址...">
+        </div>
+        <div class="favorite-dialog-footer">
+            <button class="favorite-dialog-btn cancel" id="cancelFavorite">取消</button>
+            <button class="favorite-dialog-btn save" id="saveFavorite">保存</button>
+        </div>
     </div>
 
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="toggle-sidebar" id="toggleSidebar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6" />
+            </svg>
+        </div>
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            <span>WebCrawlerPro</span>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">功能</div>
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <span>网页爬取</span>
+            </div>
+            <div class="nav-item expandable-item" id="favoritesItem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                </svg>
+                <span>收藏夹</span>
+            </div>
+            <div class="expandable-content" id="favoritesContent">
+                <div class="favorites-list" id="favoritesList">
+                    <!-- 收藏列表将在这里显示 -->
+                </div>
+                <div class="add-favorite-btn" id="addFavoriteBtn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span>添加收藏</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">最近爬取</div>
+            <ul class="history-list" id="historyList">
+                <!-- 历史记录将在这里显示 -->
+            </ul>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-title">设置</div>
+            <div class="nav-item expandable-item" id="aboutItem">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>关于我们</span>
+            </div>
+            <div class="expandable-content" id="aboutContent">
+                WebCrawlerPro 是一款基于 Java Spring Boot 和现代前端技术构建的高效网页爬虫工具。
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="main-content" id="mainContent">
+        <!-- 用户状态 -->
+        <div class="user-status" id="userStatus">
+            <div class="user-info" style="display: none;">
+                <span class="username"></span>
+                <span class="logout">退出登录</span>
+            </div>
+            <div class="auth-buttons">
+                <a href="login.html" class="btn btn-secondary">登录</a>
+                <a href="register.html" class="btn btn-primary">注册</a>
+            </div>
+        </div>
+
+        <!-- 搜索区域 -->
+        <div class="search-container" id="searchContainer">
+            <h1 class="search-title">WebCrawlerPro</h1>
+            <div class="search-box">
+                <input type="text" class="url-input" placeholder="输入新浪新闻网址..." id="urlInput">
+                <div class="toolbar-buttons">
+                    <button class="icon-btn" id="crawlBtn" title="开始爬取">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="saveBtn" title="保存结果">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-area" id="contentArea">
+            <div class="panel-header">
+                <div class="panel-title">爬取结果</div>
+            </div>
+            <div class="panel-content" id="resultContent">
+                <!-- 结果将在这里显示 -->
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 全局变量，用于存储最后一次成功爬取的URL和当前用户信息
-        let lastCrawledUrl = '';
-        let currentUser = null;
+        // DOM元素获取
+        const getEl = (id) => document.getElementById(id);
+        const urlInput = getEl('urlInput');
+        const crawlBtn = getEl('crawlBtn');
+        const saveBtn = getEl('saveBtn');
+        const resultContent = getEl('resultContent');
+        const historyList = getEl('historyList');
+        const userStatus = getEl('userStatus');
+        const userInfo = userStatus.querySelector('.user-info');
+        const authButtons = userStatus.querySelector('.auth-buttons');
+        const usernameSpan = userInfo.querySelector('.username');
+        const logoutBtn = userInfo.querySelector('.logout');
+        const saveDialog = getEl('saveDialog');
+        const overlay = getEl('overlay');
+        const closeSaveDialog = getEl('closeSaveDialog');
+        const savePdf = getEl('savePdf');
+        const saveWord = getEl('saveWord');
+        const sidebar = getEl('sidebar');
+        const toggleSidebar = getEl('toggleSidebar');
+        const mainContent = getEl('mainContent');
+        const searchContainer = getEl('searchContainer');
+        const contentArea = getEl('contentArea');
 
-        // 获取DOM元素
-        const userInfoEl = document.getElementById('user-info');
-        const logoutBtn = document.getElementById('logout-button');
-        const crawlUrlInput = document.getElementById('crawl-url');
-        const crawlBtn = document.getElementById('crawl-button');
-        const crawlStatus = document.getElementById('crawl-status');
-        const historyBtn = document.getElementById('history-button');
-        const historyStatus = document.getElementById('history-status');
-        const historyList = document.getElementById('history-list');
+        // UI交互: 侧边栏, 关于, 收藏夹
+        const aboutItem = getEl('aboutItem');
+        const aboutContent = getEl('aboutContent');
+        const favoritesItem = getEl('favoritesItem');
+        const favoritesContent = getEl('favoritesContent');
+        const favoritesList = getEl('favoritesList');
+        const addFavoriteBtn = getEl('addFavoriteBtn');
+        const favoriteDialog = getEl('favoriteDialog');
+        const closeFavoriteDialog = getEl('closeFavoriteDialog');
+        const cancelFavorite = getEl('cancelFavorite');
+        const saveFavorite = getEl('saveFavorite');
+        const favoriteUrlInput = getEl('favoriteUrlInput');
         
-        // 结果区域元素
-        const resultSection = document.getElementById('result-section');
-        const resultTitle = document.getElementById('result-title');
-        const resultSource = document.getElementById('result-source');
-        const resultTime = document.getElementById('result-time');
-        const resultKeywords = document.getElementById('result-keywords');
-        const resultContent = document.getElementById('result-content');
-        const exportWordBtn = document.getElementById('export-word-button');
-        const exportPdfBtn = document.getElementById('export-pdf-button');
+        // ----------------- UI交互逻辑 -----------------
 
+        // 侧边栏切换
+        toggleSidebar.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
 
-        // 页面加载时，检查用户登录状态
-        window.onload = async function() {
-            try {
-                // 注意：在实际项目中，后端应配置为 /api/** 的路径都需要认证
-                const response = await fetch('/api/user/current');
+        // "关于我们" 和 "收藏夹" 展开/收起
+        [aboutItem, favoritesItem].forEach(item => {
+            item.addEventListener('click', () => {
+                const content = getEl(item.id.replace('Item', 'Content'));
+                item.classList.toggle('active');
+                content.classList.toggle('active');
+            });
+        });
 
-                if (response.ok) {
-                    currentUser = await response.json();
-                    userInfoEl.innerHTML = `欢迎您，<strong>${currentUser.username}</strong>！`;
-                    logoutBtn.style.display = 'inline-block';
-                    crawlBtn.disabled = false;
-                    historyBtn.disabled = false;
-                } else {
-                    userInfoEl.innerHTML = '您还未登录，请 <a href="/login.html">登录</a> 或 <a href="/register.html">注册</a>';
-                    crawlStatus.textContent = "登录后方可使用爬虫功能。";
-                }
-            } catch (error) {
-                console.error('检查登录状态失败:', error);
-                userInfoEl.innerHTML = '无法连接到服务器。请检查网络或联系管理员。';
-            }
+        // 显示/隐藏弹窗
+        const showDialog = (dialog) => {
+            dialog.classList.add('active');
+            overlay.classList.add('active');
+        };
+        const hideDialog = (dialog) => {
+            dialog.classList.remove('active');
+            overlay.classList.remove('active');
         };
 
-        // 退出登录
-        logoutBtn.addEventListener('click', async () => {
-            await fetch('/api/user/logout', { method: 'POST' });
-            alert('您已成功退出！');
-            window.location.href = '/login.html';
+        saveBtn.addEventListener('click', () => urlInput.value.trim() ? showDialog(saveDialog) : alert('请先输入网址并成功爬取！'));
+        closeSaveDialog.addEventListener('click', () => hideDialog(saveDialog));
+        addFavoriteBtn.addEventListener('click', () => {
+            favoriteUrlInput.value = urlInput.value.trim();
+            showDialog(favoriteDialog);
         });
+        closeFavoriteDialog.addEventListener('click', () => hideDialog(favoriteDialog));
+        cancelFavorite.addEventListener('click', () => hideDialog(favoriteDialog));
+        overlay.addEventListener('click', () => {
+            hideDialog(saveDialog);
+            hideDialog(favoriteDialog);
+        });
+
+        // ----------------- 用户认证 & 历史记录 (后端API) -----------------
+
+        // 检查用户登录状态并加载历史
+        async function checkLoginStatusAndLoadData() {
+            try {
+                const response = await fetch('/api/user/current');
+                if (response.ok) {
+                    const user = await response.json();
+                    userInfo.style.display = 'flex';
+                    authButtons.style.display = 'none';
+                    usernameSpan.textContent = user.username;
+                    await fetchAndDisplayHistory();
+                } else {
+                    handleLogoutState();
+                }
+            } catch (error) {
+                console.error("检查登录状态失败:", error);
+                handleLogoutState();
+            }
+        }
         
-        // 开始爬取按钮事件
+        function handleLogoutState() {
+            userInfo.style.display = 'none';
+            authButtons.style.display = 'flex';
+            usernameSpan.textContent = '';
+            historyList.innerHTML = '<li style="padding: 10px; color: #64748b;">请登录以查看历史记录</li>';
+        }
+
+        logoutBtn.addEventListener('click', () => {
+            // 在实际应用中，这里应该调用后端的 /logout 接口
+            // 为了演示，我们假设退出成功
+            handleLogoutState();
+            // 可以重定向到登录页
+            // window.location.href = '/login.html'; 
+            alert("您已退出登录。");
+        });
+
+        // 从后端获取并显示历史记录
+        async function fetchAndDisplayHistory() {
+            try {
+                const response = await fetch('/api/history');
+                if (response.ok) {
+                    const historyData = await response.json();
+                    updateHistoryDisplay(historyData);
+                } else if (response.status !== 401) {
+                    console.error('获取历史记录失败:', response.status);
+                    historyList.innerHTML = '<li style="padding: 10px; color: #ef4444;">加载历史失败</li>';
+                }
+            } catch (error) {
+                console.error('获取历史记录时发生错误:', error);
+            }
+        }
+
+        // 更新历史记录UI
+        function updateHistoryDisplay(history) {
+            if (!history || history.length === 0) {
+                historyList.innerHTML = '<li style="padding: 10px; color: #64748b;">暂无历史记录</li>';
+                return;
+            }
+            historyList.innerHTML = history.map(item => `
+                <li class="history-item" onclick="loadHistoryItem('${item.url}')">
+                    <div class="history-content">
+                        <span class="title">${item.title}</span>
+                        <span class="time">${new Date(item.crawlTime).toLocaleString()}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+        
+        // 点击历史记录项加载
+        function loadHistoryItem(url) {
+            urlInput.value = url;
+            crawlBtn.click();
+        }
+
+        // ----------------- 核心爬取 & 导出功能 (后端API) -----------------
+        
+        // 爬取网页
         crawlBtn.addEventListener('click', async () => {
-            const url = crawlUrlInput.value.trim();
+            const url = urlInput.value.trim();
             if (!url) {
-                crawlStatus.textContent = "URL不能为空！";
+                alert('请输入要爬取的网址！');
                 return;
             }
 
-            crawlStatus.textContent = '正在爬取中，请稍候...';
-            crawlBtn.disabled = true;
-            resultSection.style.display = 'none';
+            searchContainer.classList.add('active');
+            contentArea.classList.add('active');
+            resultContent.innerHTML = '<span><div class="loading"></div>正在联系服务器爬取...</span>';
 
             try {
-                // 注意：后端应通过Session或Token获取userId，前端不需要传递
                 const response = await fetch('/api/crawl/single', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url }) // 移除 userId
+                    body: JSON.stringify({ url })
                 });
 
                 if (response.ok) {
                     const newsData = await response.json();
-                    displayResults(newsData);
-                    crawlStatus.textContent = '爬取成功！';
-                    lastCrawledUrl = newsData.url; // 保存URL以供导出
+                    displaySuccessResult(newsData);
+                    await fetchAndDisplayHistory(); // 成功后刷新历史记录
                 } else {
                     const errorText = await response.text();
-                    console.error("爬取失败:", errorText);
-                    crawlStatus.textContent = `爬取失败（状态码: ${response.status}）。请检查URL是否正确或稍后再试。`;
+                    let errorMessage = `请求失败 (状态码: ${response.status})`;
+                    if (response.status === 401) errorMessage = "未登录或会话已过期，请重新登录。";
+                    else if (response.status === 400) errorMessage = `请求无效：${errorText || 'URL格式可能不正确。'}`;
+                    else if (response.status === 500) errorMessage = `服务器内部错误：${errorText || '爬取或存储时发生问题。'}`;
+                    
+                    displayErrorResult(errorMessage);
                 }
-
             } catch (error) {
-                console.error('爬取请求失败:', error);
-                crawlStatus.textContent = '请求发送失败，请检查网络连接。';
-            } finally {
-                crawlBtn.disabled = false;
+                console.error('爬取错误:', error);
+                displayErrorResult('无法连接到服务器，请检查网络或后端服务是否正在运行。');
             }
         });
 
-        // 显示爬取结果的函数
-        function displayResults(data) {
-            resultTitle.textContent = data.title;
-            resultSource.textContent = data.source || '未知';
-            resultTime.textContent = new Date(data.publishTime).toLocaleString('zh-CN');
-            resultKeywords.textContent = data.keywords || '无';
-            resultContent.innerHTML = data.content; // 使用innerHTML来渲染HTML标签
-            resultSection.style.display = 'block';
+        function displaySuccessResult(data) {
+            const resultHtml = `
+                <div class="result-content">
+                    <div>
+                        <strong>标题</strong>
+                        <p>${data.title || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <strong>来源</strong>
+                        <p>${data.source || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <strong>发布时间</strong>
+                        <p>${data.publishTime ? new Date(data.publishTime).toLocaleString() : 'N/A'}</p>
+                    </div>
+                     <div>
+                        <strong>关键词</strong>
+                        <p>${data.keywords || '无'}</p>
+                    </div>
+                    <div>
+                        <strong>正文内容</strong>
+                        <div class="content-html">${data.content || '无内容'}</div>
+                    </div>
+                </div>
+            `;
+            resultContent.innerHTML = resultHtml;
+        }
+
+        function displayErrorResult(message) {
+             const errorHtml = `
+                <div style="color: #ef4444; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                    <strong style="color: #ef4444;">爬取失败</strong>
+                    <div style="margin-top: 8px;">${message}</div>
+                </div>
+            `;
+            resultContent.innerHTML = errorHtml;
         }
         
-        // 导出Word按钮事件
-        exportWordBtn.addEventListener('click', () => {
-            if (!lastCrawledUrl) return;
-            const exportUrl = `/api/export?url=${encodeURIComponent(lastCrawledUrl)}&format=word`;
-            window.location.href = exportUrl; // 浏览器将自动处理文件下载
-        });
-
-        // 导出PDF按钮事件
-        exportPdfBtn.addEventListener('click', () => {
-            if (!lastCrawledUrl) return;
-            const exportUrl = `/api/export?url=${encodeURIComponent(lastCrawledUrl)}&format=pdf`;
-            window.location.href = exportUrl;
-        });
-        
-        // 查看历史记录按钮事件
-        historyBtn.addEventListener('click', async () => {
-            historyStatus.textContent = "正在加载历史记录...";
-            historyList.innerHTML = ""; // 清空旧数据
-
-            try {
-                // 同样，后端通过认证信息获取用户，而不是依赖前端传ID
-                const response = await fetch(`/api/history`); // 移除 userId
-                
-                if (response.ok) {
-                    const historyData = await response.json();
-                    renderHistory(historyData);
-                    historyStatus.textContent = "";
-                } else {
-                    historyStatus.textContent = "加载历史记录失败。";
-                }
-            } catch (error) {
-                console.error('加载历史失败:', error);
-                historyStatus.textContent = "请求历史记录失败，请检查网络。";
-            }
-        });
-
-        // 渲染历史记录列表的函数
-        function renderHistory(data) {
-            if (!data || data.length === 0) {
-                historyList.innerHTML = "<p>暂无历史记录。</p>";
+        // 导出文件
+        const exportFile = async (format) => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert('请先指定一个要导出的URL！');
                 return;
             }
-            const ul = document.createElement('ul');
-            data.forEach(item => {
-                const li = document.createElement('li');
-                const time = new Date(item.crawlTime).toLocaleString('zh-CN');
-                // 让标题也能点击重新爬取
-                const titleLink = document.createElement('a');
-                titleLink.href = '#';
-                titleLink.textContent = item.title || item.url;
-                titleLink.onclick = (e) => {
-                    e.preventDefault(); // 阻止a标签默认跳转
-                    crawlUrlInput.value = item.url;
-                    crawlBtn.click(); // 触发爬取事件
-                    window.scrollTo(0, 0); // 滚动到页面顶部
-                };
-                
-                li.innerHTML = `[${time}] - `;
-                li.appendChild(titleLink);
-                ul.appendChild(li);
-            });
-            historyList.appendChild(ul);
+            try {
+                const response = await fetch(`/api/export?url=${encodeURIComponent(url)}&format=${format}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let filename = `export.${format === 'word' ? 'docx' : 'pdf'}`;
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+                        if (filenameMatch && filenameMatch.length > 1) {
+                            filename = decodeURIComponent(filenameMatch[1]);
+                        }
+                    }
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                    alert(`${format.toUpperCase()} 文件已开始下载！`);
+                } else {
+                     let errorText = await response.text();
+                     let errorMessage = `导出失败 (状态码: ${response.status})`;
+                     if (response.status === 401) errorMessage = "未登录或会话已过期，无法导出。";
+                     else errorMessage = `导出失败: ${errorText}`;
+                     alert(errorMessage);
+                }
+            } catch (error) {
+                console.error(`导出${format}错误:`, error);
+                alert(`导出${format.toUpperCase()}时发生网络错误。`);
+            }
+            hideDialog(saveDialog);
+        };
+
+        savePdf.addEventListener('click', () => exportFile('pdf'));
+        saveWord.addEventListener('click', () => exportFile('word'));
+
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') crawlBtn.click();
+        });
+
+        // ----------------- 收藏夹 (本地LocalStorage实现) -----------------
+        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+        function updateFavoritesDisplay() {
+            if (favorites.length === 0) {
+                favoritesList.innerHTML = '<div class="empty-favorites">暂无收藏</div>';
+            } else {
+                favoritesList.innerHTML = favorites.map((item, index) => `
+                    <li class="favorite-item">
+                        <a href="${item.url}" target="_blank" class="favorite-url" title="${item.url}">${item.url}</a>
+                        <span class="favorite-btn" onclick="deleteFavorite(${index})">
+                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </span>
+                    </li>
+                `).join('');
+            }
         }
+
+        function addFavorite(url) {
+            if (!url) return;
+            if (favorites.some(item => item.url === url)) {
+                alert('该网址已收藏！');
+                return;
+            }
+            favorites.unshift({ url });
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateFavoritesDisplay();
+        }
+
+        function deleteFavorite(index) {
+            favorites.splice(index, 1);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateFavoritesDisplay();
+        }
+
+        saveFavorite.addEventListener('click', () => {
+            const url = favoriteUrlInput.value.trim();
+            if (!url) {
+                alert('请输入要收藏的网址！');
+                return;
+            }
+            addFavorite(url);
+            hideDialog(favoriteDialog);
+        });
+        
+        favoriteUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveFavorite.click();
+        });
+        
+        // ----------------- 初始化 -----------------
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatusAndLoadData();
+            updateFavoritesDisplay();
+        });
+
+        // 主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // 从 localStorage 获取保存的主题
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        
+        // 更新主题图标
+        function updateThemeIcon() {
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            themeToggle.innerHTML = isDark ? 
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>`;
+        }
+        
+        // 初始化主题图标
+        updateThemeIcon();
+        
+        // 切换主题
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        });
 
     </script>
 </body>

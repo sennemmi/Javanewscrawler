@@ -34,8 +34,13 @@ public class WebSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 允许访问静态资源和特定页面
                 .requestMatchers(
-                    "/", "/index.html", "/login.html", "/register.html", 
-                    "/css/**", "/js/**", "/fonts/**"
+                    "/", "/index.html", "/login.html", "/register.html",
+                    "/crawler.html",
+                    "/css/**", "/js/**", "/fonts/**",
+                    // Swagger UI 相关的路径
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**"
                 ).permitAll()
                 // 允许访问处理登录、注册、检查当前用户状态的API
                 .requestMatchers(

@@ -1,45 +1,305 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>用户注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建账号</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root[data-theme="light"] {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --input-bg: #f1f5f9;
+            --input-border: #e2e8f0;
+            --label-color: #64748b;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        :root[data-theme="dark"] {
+            --bg-color: #232a31;
+            --card-bg: #191c23;
+            --text-color: #fff;
+            --input-bg: #23242a;
+            --input-border: #2f3336;
+            --label-color: #8b98a9;
+            --shadow-color: rgba(0, 0, 0, 0.32);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-color);
+        }
+
+        .center-card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: 0 8px 40px 0 var(--shadow-color), 0 1.5px 6px 0 rgba(60,60,60,0.08);
+            padding: 72px 64px 56px 64px;
+            max-width: 600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .logo {
+            margin: 0 0 40px 0;
+        }
+
+        .register-box {
+            background: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 48px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 36px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: var(--label-color);
+            font-size: 16px;
+            margin-bottom: 8px;
+            padding-left: 2px;
+        }
+
+        .form-group input {
+            background-color: var(--input-bg);
+            border-radius: 14px;
+            font-size: 20px;
+            padding: 22px 20px;
+            border: 1.5px solid var(--input-border);
+            color: var(--text-color);
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+
+        .register-btn {
+            width: 100%;
+            padding: 22px;
+            background-color: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 9999px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            transition: background 0.2s;
+            box-sizing: border-box;
+        }
+
+        .register-btn:hover {
+            background-color: #1a4fd8;
+        }
+
+        .login-link {
+            color: #60a5fa;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-top: 44px;
+            font-size: 19px;
+            font-weight: 500;
+        }
+
+        .login-link:hover {
+            text-decoration: underline;
+        }
+
+        .terms {
+            color: var(--label-color);
+            font-size: 13px;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+
+        .terms a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .center-card { max-width: 98vw; padding: 24px 8px 18px 8px; }
+            h1 { font-size: 22px; }
+        }
+    </style>
 </head>
 <body>
-    <h1>用户注册</h1>
-    <form id="register-form">
-        <label for="username">用户名:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        <label for="password">密码:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <button type="submit">注册</button>
-    </form>
-    <p id="message"></p>
-    <a href="/login.html">已有账户？去登录</a>
+    <button class="theme-toggle" id="themeToggle" title="切换主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+    </button>
+
+    <div class="center-card">
+        <div class="logo" style="display:flex;align-items:center;gap:10px;justify-content:center;font-size:22px;font-weight:600;color:#60a5fa;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40">
+                <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            <span>WebCrawlerPro</span>
+        </div>
+        <div class="register-box">
+            <h1>创建你的账号</h1>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">确认密码</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <button type="submit" class="register-btn">注册</button>
+                <p class="terms">
+                    注册即表示你同意我们的<a href="#">服务条款</a>和<a href="#">隐私政策</a>，包括我们的<a href="#">Cookie 使用政策</a>。
+                </p>
+            </form>
+        </div>
+        <a href="login.html" class="login-link">已有账号？登录</a>
+    </div>
 
     <script>
-        document.getElementById('register-form').addEventListener('submit', async function (e) {
-            e.preventDefault(); // 阻止表单默认提交
+        // 主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // 从 localStorage 获取保存的主题
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        
+        // 更新主题图标
+        function updateThemeIcon() {
+            const isDark = html.getAttribute('data-theme') === 'dark';
+            themeToggle.innerHTML = isDark ? 
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>`;
+        }
+        
+        // 初始化主题图标
+        updateThemeIcon();
+        
+        // 切换主题
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+        });
+
+        // 注册表单处理
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const messageEl = document.getElementById('message');
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // 验证密码
+            if (password !== confirmPassword) {
+                alert('两次输入的密码不一致！');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' // 后端期望 JSON 格式
+                    },
+                    body: JSON.stringify({ username, password })
+                });
 
-            const response = await fetch('/api/user/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (response.ok) {
-                messageEl.style.color = 'green';
-                messageEl.textContent = await response.text();
-                setTimeout(() => window.location.href = '/login.html', 1500); // 1.5秒后跳转
-            } else {
-                messageEl.style.color = 'red';
-                messageEl.textContent = '注册失败: ' + await response.text();
+                if (response.ok) {
+                    alert('注册成功！请前往登录页面。');
+                    window.location.href = 'login.html'; // 注册成功后跳转到登录页面
+                } else {
+                    let errorMessage = '注册失败！';
+                    const responseText = await response.text();
+                    try {
+                        const errorJson = JSON.parse(responseText);
+                        errorMessage += ` (${errorJson.message || JSON.stringify(errorJson)})`;
+                    } catch (err) {
+                        errorMessage += ` (${responseText})`; // 如果不是 JSON，则使用原始文本
+                    }
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                console.error('注册请求错误:', error);
+                alert('注册过程中发生网络错误，请检查网络连接。');
             }
         });
     </script>
 </body>
-</html>
+</html> 
