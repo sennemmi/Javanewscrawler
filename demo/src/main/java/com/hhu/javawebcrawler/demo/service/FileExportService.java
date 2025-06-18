@@ -27,29 +27,53 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 文件导出服务
+ * <p>
+ * 本服务提供将新闻数据导出为不同格式（包括PDF和Word文档）的功能。
+ * 支持自定义文档的字体大小、行间距等样式属性，以满足不同的导出需求。
+ * 能够处理新闻中的文本、图片、标题和列表等各种HTML元素，并保持合理的排版。
+ * </p>
+ * 
+ * @author JavaWebCrawler团队
+ */
 @Service
 public class FileExportService {
 
-    // 默认字体路径
+    /** 默认字体路径 */
     private static final String FONT_PATH = "static/fonts/simsun.ttf";
+    /** 日期时间格式化器 */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    // 默认字体大小
+    // 默认字体大小常量
+    /** 默认标题字体大小 */
     private static final int DEFAULT_TITLE_FONT_SIZE = 22;
+    /** 默认一级标题字体大小 */
     private static final int DEFAULT_HEADING1_FONT_SIZE = 20;
+    /** 默认二级标题字体大小 */
     private static final int DEFAULT_HEADING2_FONT_SIZE = 18;
+    /** 默认三级标题字体大小 */
     private static final int DEFAULT_HEADING3_FONT_SIZE = 16;
+    /** 默认正文字体大小 */
     private static final int DEFAULT_TEXT_FONT_SIZE = 14;
+    /** 默认图片说明字体大小 */
     private static final int DEFAULT_CAPTION_FONT_SIZE = 12;
+    /** 默认页脚字体大小 */
     private static final int DEFAULT_FOOTER_FONT_SIZE = 10;
 
-    // 默认行间距 (相对于字体大小的倍数)
+    /** 默认行间距 (相对于字体大小的倍数) */
     private static final float DEFAULT_LINE_SPACING = 1.5f;
 
     /**
      * 使用默认字体和间距创建 Word 文档 (.docx)
-     * @param newsData 新闻数据
-     * @return Word 文件的字节数组
+     * <p>
+     * 将新闻数据转换为Word文档，使用预设的默认样式参数。
+     * 适合快速导出不需要特殊格式要求的文档。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
+     * @return Word文档的字节数组，可直接用于下载或保存
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createWord(NewsData newsData) throws IOException {
         return createWord(newsData, DEFAULT_LINE_SPACING, DEFAULT_TITLE_FONT_SIZE, DEFAULT_HEADING1_FONT_SIZE,
@@ -58,11 +82,17 @@ public class FileExportService {
     }
 
     /**
-     * 创建 Word 文档 (.docx)，可自定义基础正文字体大小和行间距，其他元素字体大小将相对调整
-     * @param newsData 新闻数据
-     * @param textFontSize 正文字体大小
-     * @param lineSpacing 行间距倍数
-     * @return Word 文件的字节数组
+     * 创建 Word 文档 (.docx)，可自定义基础正文字体大小和行间距
+     * <p>
+     * 通过指定正文字体大小和行间距，其他元素字体大小将相对于正文字体自动调整。
+     * 适合需要调整基本阅读体验但不需要精细控制的场景。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
+     * @param textFontSize 正文字体大小（像素）
+     * @param lineSpacing 行间距倍数（相对于字体大小）
+     * @return Word文档的字节数组
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createWord(NewsData newsData, int textFontSize, float lineSpacing) throws IOException {
         // 为保持旧API兼容性，根据正文字体大小计算其他元素字体
@@ -79,16 +109,22 @@ public class FileExportService {
 
     /**
      * 创建 Word 文档 (.docx)，支持完全自定义所有元素的字体大小和行间距
-     * @param newsData 新闻数据
+     * <p>
+     * 提供最大的灵活性，允许单独设置每种元素的字体大小。
+     * 适合对文档格式有精细要求的场景。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
      * @param lineSpacing 行间距倍数
-     * @param titleFontSize 标题字体大小
-     * @param heading1FontSize 一级标题字体大小
-     * @param heading2FontSize 二级标题字体大小
-     * @param heading3FontSize 三级标题字体大小
-     * @param textFontSize 正文字体大小
-     * @param captionFontSize 图片/元数据字体大小
-     * @param footerFontSize 页脚字体大小
-     * @return Word 文件的字节数组
+     * @param titleFontSize 标题字体大小（像素）
+     * @param heading1FontSize 一级标题字体大小（像素）
+     * @param heading2FontSize 二级标题字体大小（像素）
+     * @param heading3FontSize 三级标题字体大小（像素）
+     * @param textFontSize 正文字体大小（像素）
+     * @param captionFontSize 图片说明/元数据字体大小（像素）
+     * @param footerFontSize 页脚字体大小（像素）
+     * @return Word文档的字节数组
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createWord(NewsData newsData, float lineSpacing, int titleFontSize, int heading1FontSize,
                              int heading2FontSize, int heading3FontSize, int textFontSize,
@@ -145,6 +181,18 @@ public class FileExportService {
 
     /**
      * 处理HTML内容，转换为Word文档格式
+     * <p>
+     * 解析HTML内容中的各种元素，并将其转换为Word文档对应的格式。
+     * </p>
+     * 
+     * @param document Word文档对象
+     * @param htmlDoc 已解析的HTML文档
+     * @param lineSpacing 行间距倍数
+     * @param heading1FontSize 一级标题字体大小
+     * @param heading2FontSize 二级标题字体大小
+     * @param heading3FontSize 三级标题字体大小
+     * @param textFontSize 正文字体大小
+     * @param captionFontSize 图片说明字体大小
      */
     private void processHtmlContentForWord(XWPFDocument document, org.jsoup.nodes.Document htmlDoc,
                                            float lineSpacing, int heading1FontSize, int heading2FontSize,
@@ -165,7 +213,15 @@ public class FileExportService {
     }
 
     /**
-     * 处理段落文本
+     * 处理段落文本为Word格式
+     * <p>
+     * 将HTML段落元素转换为Word文档的段落，设置首行缩进和段落间距。
+     * </p>
+     * 
+     * @param document Word文档对象
+     * @param element HTML段落元素
+     * @param textFontSize 文本字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processParagraphForWord(XWPFDocument document, Element element, int textFontSize, float lineSpacing) {
         String text = element.text().trim();
@@ -183,7 +239,17 @@ public class FileExportService {
     }
 
     /**
-     * 处理标题
+     * 处理标题为Word格式
+     * <p>
+     * 将HTML标题元素(h1-h6)转换为Word文档的标题段落，根据标题级别设置不同的字体大小。
+     * </p>
+     * 
+     * @param document Word文档对象
+     * @param element HTML标题元素
+     * @param heading1FontSize 一级标题字体大小
+     * @param heading2FontSize 二级标题字体大小
+     * @param heading3FontSize 三级标题字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processHeadingForWord(XWPFDocument document, Element element,
                                        int heading1FontSize, int heading2FontSize,
@@ -216,7 +282,15 @@ public class FileExportService {
     }
 
     /**
-     * 处理列表
+     * 处理列表为Word格式
+     * <p>
+     * 将HTML列表元素(ul/ol)转换为Word文档的列表，支持有序列表和无序列表。
+     * </p>
+     * 
+     * @param document Word文档对象
+     * @param listElement HTML列表元素
+     * @param textFontSize 文本字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processListForWord(XWPFDocument document, Element listElement, int textFontSize, float lineSpacing) {
         Elements items = listElement.select("li");
@@ -243,7 +317,16 @@ public class FileExportService {
     }
 
     /**
-     * 处理图片
+     * 处理图片为Word格式
+     * <p>
+     * 将HTML图片元素转换为Word文档中的图片，并添加图片说明。
+     * 如果图片无法加载，将显示错误信息。
+     * </p>
+     * 
+     * @param document Word文档对象
+     * @param imgWrapper HTML图片容器元素
+     * @param captionFontSize 图片说明字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processImageForWord(XWPFDocument document, Element imgWrapper, int captionFontSize, float lineSpacing) {
         Element img = imgWrapper.selectFirst("img");
@@ -302,8 +385,14 @@ public class FileExportService {
 
     /**
      * 使用默认字体和间距创建 PDF 文档
-     * @param newsData 新闻数据
-     * @return PDF 文件的字节数组
+     * <p>
+     * 将新闻数据转换为PDF文档，使用预设的默认样式参数。
+     * 适合快速导出不需要特殊格式要求的PDF文档。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
+     * @return PDF文档的字节数组
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData) throws IOException {
         return createPdf(newsData, DEFAULT_LINE_SPACING, DEFAULT_TITLE_FONT_SIZE, DEFAULT_HEADING1_FONT_SIZE,
@@ -312,11 +401,17 @@ public class FileExportService {
     }
 
     /**
-     * 创建 PDF 文档，可自定义基础正文字体大小和行间距，其他元素字体大小将相对调整
-     * @param newsData 新闻数据
-     * @param textFontSize 正文字体大小
-     * @param lineSpacing 行间距倍数
-     * @return PDF 文件的字节数组
+     * 创建 PDF 文档，可自定义基础正文字体大小和行间距
+     * <p>
+     * 通过指定正文字体大小和行间距，其他元素字体大小将相对于正文字体自动调整。
+     * 适合需要调整基本阅读体验但不需要精细控制的场景。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
+     * @param textFontSize 正文字体大小（像素）
+     * @param lineSpacing 行间距倍数（相对于字体大小）
+     * @return PDF文档的字节数组
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData, int textFontSize, float lineSpacing) throws IOException {
         int titleFontSize = textFontSize + 8;
@@ -332,16 +427,22 @@ public class FileExportService {
 
     /**
      * 创建 PDF 文档，支持完全自定义所有元素的字体大小和行间距
-     * @param newsData 新闻数据
+     * <p>
+     * 提供最大的灵活性，允许单独设置每种元素的字体大小。
+     * 适合对PDF文档格式有精细要求的场景。
+     * </p>
+     * 
+     * @param newsData 要导出的新闻数据对象
      * @param lineSpacing 行间距倍数
-     * @param titleFontSize 标题字体大小
-     * @param heading1FontSize 一级标题字体大小
-     * @param heading2FontSize 二级标题字体大小
-     * @param heading3FontSize 三级标题字体大小
-     * @param textFontSize 正文字体大小
-     * @param captionFontSize 图片/元数据字体大小
-     * @param footerFontSize 页脚字体大小
-     * @return PDF 文件的字节数组
+     * @param titleFontSize 标题字体大小（像素）
+     * @param heading1FontSize 一级标题字体大小（像素）
+     * @param heading2FontSize 二级标题字体大小（像素）
+     * @param heading3FontSize 三级标题字体大小（像素）
+     * @param textFontSize 正文字体大小（像素）
+     * @param captionFontSize 图片说明/元数据字体大小（像素）
+     * @param footerFontSize 页脚字体大小（像素）
+     * @return PDF文档的字节数组
+     * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData, float lineSpacing, int titleFontSize, int heading1FontSize,
                             int heading2FontSize, int heading3FontSize, int textFontSize,
@@ -400,6 +501,21 @@ public class FileExportService {
 
     /**
      * 处理HTML内容，转换为PDF文档格式
+     * <p>
+     * 解析HTML内容中的各种元素，并将其转换为PDF文档对应的格式。
+     * 包括段落、标题、列表和图片等元素的处理。
+     * </p>
+     * 
+     * @param document PDF文档对象
+     * @param htmlDoc 已解析的HTML文档
+     * @param font 标准字体
+     * @param boldFont 粗体字体
+     * @param lineSpacing 行间距倍数
+     * @param heading1FontSize 一级标题字体大小
+     * @param heading2FontSize 二级标题字体大小
+     * @param heading3FontSize 三级标题字体大小
+     * @param textFontSize 正文字体大小
+     * @param captionFontSize 图片说明字体大小
      */
     private void processHtmlContentForPdf(Document document, org.jsoup.nodes.Document htmlDoc,
                                           PdfFont font, PdfFont boldFont, float lineSpacing,
@@ -422,7 +538,16 @@ public class FileExportService {
     }
 
     /**
-     * 处理段落文本
+     * 处理段落文本为PDF格式
+     * <p>
+     * 将HTML段落元素转换为PDF文档的段落，设置首行缩进和段落间距。
+     * </p>
+     * 
+     * @param document PDF文档对象
+     * @param element HTML段落元素
+     * @param font PDF字体
+     * @param textFontSize 文本字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processParagraphForPdf(Document document, Element element, PdfFont font,
                                         int textFontSize, float lineSpacing) {
@@ -439,7 +564,18 @@ public class FileExportService {
     }
 
     /**
-     * 处理标题
+     * 处理标题为PDF格式
+     * <p>
+     * 将HTML标题元素(h1-h6)转换为PDF文档的标题段落，根据标题级别设置不同的字体大小。
+     * </p>
+     * 
+     * @param document PDF文档对象
+     * @param element HTML标题元素
+     * @param boldFont 粗体PDF字体
+     * @param heading1FontSize 一级标题字体大小
+     * @param heading2FontSize 二级标题字体大小
+     * @param heading3FontSize 三级标题字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processHeadingForPdf(Document document, Element element, PdfFont boldFont,
                                       int heading1FontSize, int heading2FontSize,
@@ -471,7 +607,16 @@ public class FileExportService {
     }
 
     /**
-     * 处理列表
+     * 处理列表为PDF格式
+     * <p>
+     * 将HTML列表元素(ul/ol)转换为PDF文档的列表，支持有序列表和无序列表。
+     * </p>
+     * 
+     * @param document PDF文档对象
+     * @param listElement HTML列表元素
+     * @param font PDF字体
+     * @param textFontSize 文本字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processListForPdf(Document document, Element listElement, PdfFont font,
                                    int textFontSize, float lineSpacing) {
@@ -494,7 +639,17 @@ public class FileExportService {
     }
 
     /**
-     * 处理图片
+     * 处理图片为PDF格式
+     * <p>
+     * 将HTML图片元素转换为PDF文档中的图片，并添加图片说明。
+     * 如果图片无法加载，将显示错误信息。
+     * </p>
+     * 
+     * @param document PDF文档对象
+     * @param imgWrapper HTML图片容器元素
+     * @param font PDF字体
+     * @param captionFontSize 图片说明字体大小
+     * @param lineSpacing 行间距倍数
      */
     private void processImageForPdf(Document document, Element imgWrapper, PdfFont font,
                                     int captionFontSize, float lineSpacing) {
@@ -537,6 +692,13 @@ public class FileExportService {
 
     /**
      * 加载中文字体
+     * <p>
+     * 尝试从类路径加载中文字体，如果失败则尝试使用系统字体。
+     * 按优先级顺序尝试：指定的字体文件 -> 系统中文字体 -> 默认字体。
+     * </p>
+     * 
+     * @return 可用于PDF的中文字体
+     * @throws IOException 如果所有字体加载尝试都失败
      */
     private PdfFont loadChineseFont() throws IOException {
         try {
@@ -560,6 +722,13 @@ public class FileExportService {
 
     /**
      * 加载中文粗体字体
+     * <p>
+     * 尝试从类路径加载中文粗体字体，如果失败则尝试使用系统字体。
+     * 由于宋体(SimSun)没有原生粗体变体，这里加载普通字体，再通过iText的API设置粗体样式。
+     * </p>
+     * 
+     * @return 可用于PDF的中文粗体字体
+     * @throws IOException 如果所有字体加载尝试都失败
      */
     private PdfFont loadChineseBoldFont() throws IOException {
         try {
