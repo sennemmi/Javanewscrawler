@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析 - 新闻爬虫系统</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/analysis.css">
+    <script src="js/echarts.min.js"></script>
+    <script src="js/wordcloud2.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">
+                                <i class="bi bi-house"></i> 首页
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="analysis.html">
+                                <i class="bi bi-bar-chart"></i> 数据分析
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="history.html">
+                                <i class="bi bi-clock-history"></i> 历史记录
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- 主内容区 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">数据分析</h1>
+                    <div id="user-info">
+                        <span id="username"></span>
+                        <button id="logout-btn" class="btn btn-sm btn-outline-secondary">退出</button>
+                    </div>
+                </div>
+
+                <!-- 时间范围选择器 -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <div class="form-group">
+                                            <label for="startDate">开始时间</label>
+                                            <input type="datetime-local" class="form-control" id="startDate">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="form-group">
+                                            <label for="endDate">结束时间</label>
+                                            <input type="datetime-local" class="form-control" id="endDate">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button id="apply-date-filter" class="btn btn-primary w-100">应用</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分析模块 -->
+                <div class="row">
+                    <!-- 词云图 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between">
+                                <h5 class="card-title">词云分析</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="wordCloudSourceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        数据源: 标题
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="wordCloudSourceDropdown">
+                                        <li><a class="dropdown-item word-cloud-source" data-source="title" href="#">标题</a></li>
+                                        <li><a class="dropdown-item word-cloud-source" data-source="content" href="#">正文</a></li>
+                                        <li><a class="dropdown-item word-cloud-source" data-source="keywords" href="#">关键词</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="word-cloud-container" class="analysis-chart"></div>
+                                <div id="word-cloud-loading" class="text-center mt-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">加载词云数据...</p>
+                                </div>
+                                <div id="word-cloud-empty" class="text-center mt-5 d-none">
+                                    <i class="bi bi-emoji-frown" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">暂无词云数据</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 热词排行榜 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title">热词排行榜</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="hot-words-chart" class="analysis-chart"></div>
+                                <div id="hot-words-loading" class="text-center mt-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">加载热词数据...</p>
+                                </div>
+                                <div id="hot-words-empty" class="text-center mt-5 d-none">
+                                    <i class="bi bi-emoji-frown" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">暂无热词数据</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 时间趋势分析 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between">
+                                <h5 class="card-title">关键词时间趋势</h5>
+                                <div class="input-group input-group-sm" style="width: 250px;">
+                                    <input type="text" id="trend-keyword" class="form-control" placeholder="输入关键词">
+                                    <div class="input-group-append">
+                                        <select id="time-unit" class="form-select">
+                                            <option value="day">按日</option>
+                                            <option value="week">按周</option>
+                                            <option value="month">按月</option>
+                                        </select>
+                                    </div>
+                                    <button id="search-trend" class="btn btn-primary">查询</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="time-trend-chart" class="analysis-chart"></div>
+                                <div id="time-trend-loading" class="text-center mt-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">加载趋势数据...</p>
+                                </div>
+                                <div id="time-trend-empty" class="text-center mt-5 d-none">
+                                    <i class="bi bi-emoji-frown" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">暂无趋势数据</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 来源分布 -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title">内容来源分布</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="source-distribution-chart" class="analysis-chart"></div>
+                                <div id="source-loading" class="text-center mt-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">加载来源数据...</p>
+                                </div>
+                                <div id="source-empty" class="text-center mt-5 d-none">
+                                    <i class="bi bi-emoji-frown" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">暂无来源数据</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/analysis.js"></script>
+</body>
+
+</html> 
