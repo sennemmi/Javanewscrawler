@@ -1,0 +1,250 @@
+/*
+ * styles/home.css
+ * 这是经过现代化改造的首页样式
+ */
+
+ #homeView {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center; /* 确保垂直居中 */
+    overflow: hidden; /* 防止动画溢出 */
+    padding: 290px;
+}
+
+.search-container {
+    width: 100%;
+    max-width: 720px;
+    padding: 0px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn-up 0.8s 0.2s var(--ease-cubic) forwards;
+    margin: 0 auto;
+}
+
+@keyframes fadeIn-up {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.search-title {
+    font-size: 60px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 40px;
+    
+    /* 现代化的渐变文字效果 */
+    background: linear-gradient(45deg, var(--active-color) 30%, color-mix(in srgb, var(--active-color) 60%, var(--text-color)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent; /* 替换 text-fill-color 为标准的 color 属性 */
+    /* 添加文字阴影增强现代感 */
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* 重新设计的搜索框容器 */
+.search-box {
+    display: flex; /* 使用 Flexbox 进行布局 */
+    align-items: center;
+    height: 68px;
+    border-radius: 34px; /* 完美的药丸形状 */
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 0 8px; /* 内边距给按钮留出空间 */
+    box-shadow: 0 4px 20px -4px var(--shadow-color);
+    transition: all 0.3s var(--ease-cubic);
+    /* 增强现代感的毛玻璃效果 */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    margin: 0 auto;
+}
+
+/* 使用 :focus-within 提升交互体验 */
+/* 当内部的输入框获得焦点时，整个容器都会有反馈 */
+.search-box:focus-within {
+    border-color: var(--active-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--active-color) 20%, transparent), 
+                0 10px 25px -6px var(--shadow-color);
+    transform: translateY(-2px);
+}
+
+/* 输入框本身透明化，成为容器的一部分 */
+.url-input {
+    flex-grow: 1; /* 占据所有可用空间 */
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 18px;
+    color: var(--text-color);
+    padding: 0 24px; /* 文字的内边距 */
+}
+
+.url-input::placeholder {
+    color: var(--text-color-secondary);
+    transition: color 0.3s var(--ease-cubic);
+}
+
+.search-box:focus-within .url-input::placeholder {
+    color: color-mix(in srgb, var(--text-color-secondary) 50%, transparent);
+}
+
+/* 现代化的爬取按钮 */
+.crawl-btn {
+    flex-shrink: 0; /* 防止按钮被压缩 */
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: var(--active-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px -1px color-mix(in srgb, var(--active-color) 50%, black);
+    transform: scale(1);
+    transition: transform 0.2s var(--ease-cubic), box-shadow 0.2s var(--ease-cubic), background 0.2s var(--ease-cubic);
+}
+
+.crawl-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--active-color) 50%, black);
+    background: linear-gradient(45deg, var(--active-color), color-mix(in srgb, var(--active-color), #6366f1 50%));
+}
+
+.crawl-btn:active {
+    transform: scale(1.05);
+}
+
+.crawl-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* 爬取类型选择器 */
+.crawl-type-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 6px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.type-option {
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-cubic);
+    color: var(--text-color-secondary);
+    user-select: none;
+}
+
+.type-option:hover {
+    color: var(--text-color);
+}
+
+.type-option.active {
+    background: var(--active-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 搜索提示文本 */
+.search-tip {
+    text-align: center;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+}
+
+/* 关键词爬取选项 */
+.keyword-options {
+    margin-top: 20px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    transition: all 0.3s var(--ease-cubic);
+}
+
+.option-group {
+    margin-bottom: 12px;
+}
+
+.option-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.option-group .form-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-color);
+    transition: all 0.2s var(--ease-cubic);
+}
+
+.option-group .form-input:focus {
+    border-color: var(--active-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--active-color) 20%, transparent);
+    outline: none;
+}
+
+/* 批量爬取结果展示 */
+.batch-result-summary {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.batch-result-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.batch-result-info {
+    color: var(--text-color-secondary);
+    margin-bottom: 10px;
+}
+
+.batch-result-list {
+    margin-top: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    background: var(--bg-content);
+}
+
+.batch-result-item {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.batch-result-item:last-child {
+    border-bottom: none;
+}

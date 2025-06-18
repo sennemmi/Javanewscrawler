@@ -1,40 +1,78 @@
 // DOM元素获取
 const getEl = (id) => document.getElementById(id);
+
+// 页面视图
+const homeView = getEl('homeView');
+const resultView = getEl('resultView');
+const articleWrapper = getEl('articleWrapper');
+
+// 控件
 const urlInput = getEl('urlInput');
 const crawlBtn = getEl('crawlBtn');
-const saveBtn = getEl('saveBtn');
-const resultContent = getEl('resultContent');
+const backBtn = getEl('backBtn');
+const exportBtn = getEl('exportBtn');
 const historyList = getEl('historyList');
+const sidebar = getEl('sidebar');
+const toggleSidebar = getEl('toggleSidebar');
+const typeOptions = document.querySelectorAll('.type-option');
+const searchTip = getEl('searchTip');
+const keywordOptions = getEl('keywordOptions');
+const keywordEntryUrl = getEl('keywordEntryUrl');
+
+// 用户认证
 const userStatus = getEl('userStatus');
 const userInfo = userStatus.querySelector('.user-info');
 const authButtons = userStatus.querySelector('.auth-buttons');
 const usernameSpan = userInfo.querySelector('.username');
 const logoutBtn = userInfo.querySelector('.logout');
-const saveDialog = getEl('saveDialog');
-const overlay = getEl('overlay');
-const closeSaveDialog = getEl('closeSaveDialog');
-const savePdf = getEl('savePdf');
-const saveWord = getEl('saveWord');
-const sidebar = getEl('sidebar');
-const toggleSidebar = getEl('toggleSidebar');
-const mainContent = getEl('mainContent');
-const searchContainer = getEl('searchContainer');
-const contentArea = getEl('contentArea');
 
-// UI交互: 侧边栏, 关于, 收藏夹
-const aboutItem = getEl('aboutItem');
-const aboutContent = getEl('aboutContent');
-const favoritesItem = getEl('favoritesItem');
-const favoritesContent = getEl('favoritesContent');
-const favoritesList = getEl('favoritesList');
-const addFavoriteBtn = getEl('addFavoriteBtn');
+// 对话框
+const overlay = getEl('overlay');
+const saveDialog = getEl('saveDialog');
+const closeSaveDialog = getEl('closeSaveDialog');
+const cancelExport = getEl('cancelExport');
+const confirmExport = getEl('confirmExport');
 const favoriteDialog = getEl('favoriteDialog');
 const closeFavoriteDialog = getEl('closeFavoriteDialog');
 const cancelFavorite = getEl('cancelFavorite');
 const saveFavorite = getEl('saveFavorite');
 const favoriteUrlInput = getEl('favoriteUrlInput');
 
-// ----------------- UI交互逻辑 -----------------
+// 导出设置控件
+const exportPdfBtn = getEl('exportPdfBtn');
+const exportWordBtn = getEl('exportWordBtn');
+const fontFamily = getEl('fontFamily');
+const textFontSize = getEl('textFontSize');
+const lineSpacing = getEl('lineSpacing');
+const pageWidth = getEl('pageWidth');
+const titleFontSize = getEl('titleFontSize');
+const h1FontSize = getEl('h1FontSize');
+const h2FontSize = getEl('h2FontSize');
+const h3FontSize = getEl('h3FontSize');
+const captionFontSize = getEl('captionFontSize');
+const footerFontSize = getEl('footerFontSize');
+
+// 侧边栏可展开项
+const aboutItem = getEl('aboutItem');
+const favoritesItem = getEl('favoritesItem');
+const addFavoriteBtn = getEl('addFavoriteBtn');
+const favoritesList = getEl('favoritesList');
+
+// 存储当前成功爬取的文章数据，用于导出
+let currentArticleData = null;
+// 存储当前选择的导出格式
+let currentExportFormat = 'pdf';
+// 当前爬取类型
+let currentCrawlType = 'single';
+
+// ----------------- UI 交互逻辑 -----------------
+
+// 视图切换
+const showView = (view) => {
+    homeView.style.display = 'none';
+    resultView.style.display = 'none';
+    view.style.display = view === resultView ? 'flex' : 'block';
+};
 
 // 侧边栏切换
 toggleSidebar.addEventListener('click', () => {
@@ -64,8 +102,9 @@ const hideDialog = (dialog) => {
     overlay.classList.remove('active');
 };
 
-saveBtn.addEventListener('click', () => urlInput.value.trim() ? showDialog(saveDialog) : alert('请先输入网址并成功爬取！'));
+exportBtn.addEventListener('click', () => showDialog(saveDialog));
 closeSaveDialog.addEventListener('click', () => hideDialog(saveDialog));
+cancelExport.addEventListener('click', () => hideDialog(saveDialog));
 addFavoriteBtn.addEventListener('click', () => {
     favoriteUrlInput.value = urlInput.value.trim();
     showDialog(favoriteDialog);
@@ -76,10 +115,281 @@ overlay.addEventListener('click', () => {
     hideDialog(saveDialog);
     hideDialog(favoriteDialog);
 });
+backBtn.addEventListener('click', () => showView(homeView));
+
+// 爬取类型切换
+typeOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        // 更新激活的选项
+        typeOptions.forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        
+        // 获取爬取类型
+        currentCrawlType = option.getAttribute('data-type');
+        
+        // 更新搜索框提示和占位符
+        updateInputForCrawlType();
+    });
+});
+
+// 根据爬取类型更新输入框和提示
+function updateInputForCrawlType() {
+    // 关键词爬取选项显示控制
+    keywordOptions.style.display = currentCrawlType === 'keyword' ? 'block' : 'none';
+    
+    // 更新输入框提示文本
+    switch(currentCrawlType) {
+        case 'single':
+            urlInput.placeholder = "输入新浪新闻网址...";
+            searchTip.textContent = "输入单个新闻URL，如 https://news.sina.com.cn/c/xxxx/doc-xxx.shtml";
+            break;
+        case 'index':
+            urlInput.placeholder = "输入新闻列表页或频道页网址...";
+            searchTip.textContent = "输入新闻列表页URL，如 https://news.sina.com.cn/china/ 或 https://news.sina.com.cn/c/2023-10-15/";
+            break;
+        case 'keyword':
+            urlInput.placeholder = "输入关键词...";
+            searchTip.textContent = "输入要搜索的关键词，系统将从指定入口页中爬取包含该关键词的新闻";
+            break;
+    }
+}
+
+// ----------------- 核心爬取 & 导出功能 (后端API) -----------------
+
+// 爬取网页
+crawlBtn.addEventListener('click', async () => {
+    const input = urlInput.value.trim();
+    if (!input) {
+        alert('请输入' + (currentCrawlType === 'keyword' ? '关键词' : '网址') + '！');
+        return;
+    }
+    
+    showView(resultView);
+    articleWrapper.innerHTML = '<div class="loading-container"><span><div class="loading"></div>正在联系服务器爬取...</span></div>';
+    
+    try {
+        // 根据不同爬取类型选择不同的API端点和处理方式
+        let response;
+        
+        switch(currentCrawlType) {
+            case 'single':
+                response = await fetch('/api/crawl/single', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: input })
+                });
+                break;
+                
+            case 'index':
+                response = await fetch('/api/crawl/from-index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: input })
+                });
+                break;
+                
+            case 'keyword':
+                const payload = { keyword: input };
+                if (keywordEntryUrl.value.trim()) {
+                    payload.url = keywordEntryUrl.value.trim();
+                }
+                
+                response = await fetch('/api/crawl/by-keyword', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                break;
+        }
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // 单URL爬取和批量爬取的显示方式不同
+            if (currentCrawlType === 'single') {
+                displaySuccessResult(data);
+            } else {
+                displayBatchCrawlResult(data, currentCrawlType);
+            }
+            
+            await fetchAndDisplayHistory(); // 成功后刷新历史记录
+        } else {
+            const errorText = await response.text();
+            let errorMessage = `请求失败 (状态码: ${response.status})`;
+            if (response.status === 401) errorMessage = "未登录或会话已过期，请重新登录。";
+            else if (response.status === 400) errorMessage = `请求无效：${errorText || '输入格式可能不正确。'}`;
+            else if (response.status === 500) errorMessage = `服务器内部错误：${errorText || '爬取或存储时发生问题。'}`;
+            
+            displayErrorResult(errorMessage);
+        }
+    } catch (error) {
+        console.error('爬取错误:', error);
+        displayErrorResult('无法连接到服务器，请检查网络或后端服务是否正在运行。');
+    }
+});
+
+// 显示单URL爬取的结果
+function displaySuccessResult(data) {
+    currentArticleData = data; // 缓存数据用于导出
+    const resultHtml = `
+        <header class="article-header">
+            <h1>${data.title || '无标题'}</h1>
+            <div class="article-meta">
+                ${data.source ? `<div class="meta-item"><strong>来源:</strong> <span>${data.source}</span></div>` : ''}
+                ${data.author ? `<div class="meta-item"><strong>作者:</strong> <span>${data.author}</span></div>` : ''}
+                ${data.publishTime ? `<div class="meta-item"><strong>发布时间:</strong> <span>${new Date(data.publishTime).toLocaleString()}</span></div>` : ''}
+                ${data.keywords ? `<div class="meta-item"><strong>关键词:</strong> <span>${data.keywords}</span></div>` : ''}
+            </div>
+        </header>
+        <div class="article-body">
+            ${data.content || '<p>无正文内容。</p>'}
+        </div>
+    `;
+    articleWrapper.innerHTML = resultHtml;
+}
+
+// 显示批量爬取结果（二级爬取或关键词爬取）
+function displayBatchCrawlResult(data, type) {
+    currentArticleData = null; // 批量爬取不支持导出单篇文章
+    
+    // 根据不同类型设置标题和信息
+    let title, info;
+    if (type === 'index') {
+        title = "二级爬取完成";
+        info = `从入口页 <strong>${data.entryUrl}</strong> 成功爬取了 <strong>${data.crawledCount}</strong> 条新闻`;
+    } else if (type === 'keyword') {
+        title = "关键词爬取完成";
+        info = `使用关键词 <strong>${data.keyword}</strong> 从 <strong>${data.entryUrl}</strong> 成功爬取了 <strong>${data.crawledCount}</strong> 条新闻`;
+    }
+    
+    // 构建结果HTML
+    const resultHtml = `
+        <div class="batch-result-summary">
+            <h2 class="batch-result-title">${title}</h2>
+            <div class="batch-result-info">${info}</div>
+            <div class="batch-result-tip">爬取结果已添加到历史记录，您可以通过侧边栏访问这些新闻</div>
+            
+            ${data.titles && data.titles.length > 0 ? `
+                <div class="batch-result-list">
+                    ${data.titles.map((title, index) => `
+                        <div class="batch-result-item">${index + 1}. ${title}</div>
+                    `).join('')}
+                </div>
+            ` : ''}
+        </div>
+        <div class="batch-result-actions">
+            <button class="btn btn-primary" onclick="showView(homeView)">返回首页继续爬取</button>
+        </div>
+    `;
+    
+    articleWrapper.innerHTML = resultHtml;
+}
+
+function displayErrorResult(message) {
+    currentArticleData = null; // 清除缓存
+    const errorHtml = `
+        <div class="error-container">
+            <strong>爬取失败</strong>
+            <p>${message}</p>
+        </div>
+    `;
+    articleWrapper.innerHTML = errorHtml;
+}
+
+urlInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') crawlBtn.click();
+});
+
+// 导出文件
+confirmExport.addEventListener('click', async () => {
+    if (!currentArticleData || !currentArticleData.url) {
+        alert('没有可导出的内容。请先成功爬取一篇文章。');
+        return;
+    }
+    
+    try {
+        // 构建URL参数
+        const url = currentArticleData.url;
+        const format = currentExportFormat;
+        const textSize = textFontSize.value;
+        const spacing = lineSpacing.value;
+        const font = encodeURIComponent(fontFamily.value);
+        const width = pageWidth.value;
+        
+        // 构建完整URL，包含所有参数
+        let exportUrl = `/api/export?url=${encodeURIComponent(url)}&format=${format}&textFontSize=${textSize}&lineSpacing=${spacing}&fontFamily=${font}&pageWidth=${width}`;
+        
+        // 添加高级设置参数
+        exportUrl += `&titleFontSize=${titleFontSize.value}`;
+        exportUrl += `&h1FontSize=${h1FontSize.value}`;
+        exportUrl += `&h2FontSize=${h2FontSize.value}`;
+        exportUrl += `&h3FontSize=${h3FontSize.value}`;
+        exportUrl += `&captionFontSize=${captionFontSize.value}`;
+        exportUrl += `&footerFontSize=${footerFontSize.value}`;
+        
+        // 添加skipHistoryRecord参数，告知后端不要记录导出历史
+        exportUrl += `&skipHistoryRecord=true`;
+        
+        // 显示加载状态
+        confirmExport.textContent = '导出中...';
+        confirmExport.disabled = true;
+        
+        // 使用GET方法发送请求，因为后端当前只支持GET方式的导出
+        const response = await fetch(exportUrl);
+        
+        // 恢复按钮状态
+        confirmExport.textContent = '确认导出';
+        confirmExport.disabled = false;
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `export.${format === 'word' ? 'docx' : 'pdf'}`;
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+                if (filenameMatch && filenameMatch.length > 1) {
+                    filename = decodeURIComponent(filenameMatch[1]);
+                }
+            }
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            alert(`${format.toUpperCase()} 文件已开始下载！`);
+            hideDialog(saveDialog);
+        } else {
+            const errorText = await response.text();
+            alert(`导出失败 (状态码: ${response.status}): ${errorText}`);
+        }
+    } catch (error) {
+        confirmExport.textContent = '确认导出';
+        confirmExport.disabled = false;
+        console.error('导出错误:', error);
+        alert(`导出过程中发生错误: ${error.message}`);
+    }
+});
+
+// 导出格式选择
+exportPdfBtn.addEventListener('click', () => {
+    exportPdfBtn.classList.add('active');
+    exportWordBtn.classList.remove('active');
+    currentExportFormat = 'pdf';
+});
+
+exportWordBtn.addEventListener('click', () => {
+    exportWordBtn.classList.add('active');
+    exportPdfBtn.classList.remove('active');
+    currentExportFormat = 'word';
+});
+
+// 不再需要高级设置切换代码，因为我们现在使用左右布局
 
 // ----------------- 用户认证 & 历史记录 (后端API) -----------------
 
-// 检查用户登录状态并加载历史
 async function checkLoginStatusAndLoadData() {
     try {
         const response = await fetch('/api/user/current');
@@ -102,19 +412,14 @@ function handleLogoutState() {
     userInfo.style.display = 'none';
     authButtons.style.display = 'flex';
     usernameSpan.textContent = '';
-    historyList.innerHTML = '<li style="padding: 10px; color: #64748b; cursor: default;">请登录以查看历史记录</li>';
+    historyList.innerHTML = '<li style="padding: 10px; color: var(--text-color-secondary);">请登录以查看历史记录</li>';
 }
 
 logoutBtn.addEventListener('click', () => {
-    // 在实际应用中，这里应该调用后端的 /logout 接口
-    // 为了演示，我们假设退出成功
     handleLogoutState();
-    // 可以重定向到登录页
-    // window.location.href = '/login.html'; 
     alert("您已退出登录。");
 });
 
-// 从后端获取并显示历史记录
 async function fetchAndDisplayHistory() {
     try {
         const response = await fetch('/api/history');
@@ -122,180 +427,113 @@ async function fetchAndDisplayHistory() {
             const historyData = await response.json();
             updateHistoryDisplay(historyData);
         } else if (response.status !== 401) {
-            console.error('获取历史记录失败:', response.status);
-            historyList.innerHTML = '<li style="padding: 10px; color: #ef4444; cursor: default;">加载历史失败</li>';
+            historyList.innerHTML = '<li style="padding: 10px; color: #ef4444;">加载历史失败</li>';
         }
     } catch (error) {
         console.error('获取历史记录时发生错误:', error);
     }
 }
 
-// 更新历史记录UI
 function updateHistoryDisplay(history) {
     if (!history || history.length === 0) {
-        historyList.innerHTML = '<li style="padding: 10px; color: #64748b; cursor: default;">暂无历史记录</li>';
+        historyList.innerHTML = '<li style="padding: 10px; color: var(--text-color-secondary);">暂无历史记录</li>';
         return;
     }
     historyList.innerHTML = history.map(item => `
-        <li class="history-item" onclick="loadHistoryItem('${item.url}')">
-            <div class="history-content">
+        <li class="history-item" data-id="${item.id}">
+            <div class="history-content" onclick="loadHistoryItem('${item.url}')">
                 <span class="title">${item.title}</span>
                 <span class="time">${new Date(item.crawlTime).toLocaleString()}</span>
             </div>
-        </li>
-    `).join('');
+            <div class="delete-btn" onclick="deleteHistoryItem(${item.id}, event)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+        </li>`).join('');
 }
 
-// 点击历史记录项加载
-function loadHistoryItem(url) {
+async function loadHistoryItem(url) {
     urlInput.value = url;
-    crawlBtn.click();
-}
-
-// ----------------- 核心爬取 & 导出功能 (后端API) -----------------
-
-// 爬取网页
-crawlBtn.addEventListener('click', async () => {
-    const url = urlInput.value.trim();
-    if (!url) {
-        alert('请输入要爬取的网址！');
-        return;
-    }
-
-    searchContainer.classList.add('active');
-    contentArea.classList.add('active');
-    resultContent.innerHTML = '<span><div class="loading"></div>正在联系服务器爬取...</span>';
-
+    showView(resultView);
+    articleWrapper.innerHTML = '<div class="loading-container"><span><div class="loading"></div>正在获取历史记录...</span></div>';
+    
     try {
-        const response = await fetch('/api/crawl/single', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-        });
-
+        const response = await fetch(`/api/news/detail?url=${encodeURIComponent(url)}`);
         if (response.ok) {
             const newsData = await response.json();
             displaySuccessResult(newsData);
-            await fetchAndDisplayHistory(); // 成功后刷新历史记录
+        } else if (response.status === 404) {
+            console.log('历史记录中没有详细数据，尝试重新爬取');
+            await crawlBtn.click();
         } else {
-            const errorText = await response.text();
-            let errorMessage = `请求失败 (状态码: ${response.status})`;
-            if (response.status === 401) errorMessage = "未登录或会话已过期，请重新登录。";
-            else if (response.status === 400) errorMessage = `请求无效：${errorText || 'URL格式可能不正确。'}`;
-            else if (response.status === 500) errorMessage = `服务器内部错误：${errorText || '爬取或存储时发生问题。'}`;
-            
-            displayErrorResult(errorMessage);
+            displayErrorResult('无法获取历史记录详情，请尝试重新爬取');
         }
     } catch (error) {
-        console.error('爬取错误:', error);
-        displayErrorResult('无法连接到服务器，请检查网络或后端服务是否正在运行。');
+        console.error('获取历史记录详情错误:', error);
+        displayErrorResult('获取历史记录详情时发生错误');
     }
-});
-
-function displaySuccessResult(data) {
-    const resultHtml = `
-        <div class="result-content">
-            <div>
-                <strong>标题</strong>
-                <p>${data.title || 'N/A'}</p>
-            </div>
-            <div>
-                <strong>来源</strong>
-                <p>${data.source || 'N/A'}</p>
-            </div>
-            <div>
-                <strong>发布时间</strong>
-                <p>${data.publishTime ? new Date(data.publishTime).toLocaleString() : 'N/A'}</p>
-            </div>
-             <div>
-                <strong>关键词</strong>
-                <p>${data.keywords || '无'}</p>
-            </div>
-            <div>
-                <strong>正文内容</strong>
-                <div class="content-html">${data.content || '无内容'}</div>
-            </div>
-        </div>
-    `;
-    resultContent.innerHTML = resultHtml;
 }
 
-function displayErrorResult(message) {
-     const errorHtml = `
-        <div style="color: #ef4444; padding: 20px; background: rgba(239, 68, 68, 0.1); border-radius: 8px;">
-            <strong style="color: #ef4444;">爬取失败</strong>
-            <div style="margin-top: 8px;">${message}</div>
-        </div>
-    `;
-    resultContent.innerHTML = errorHtml;
-}
-
-// 导出文件
-const exportFile = async (format) => {
-    const url = urlInput.value.trim();
-    if (!url) {
-        alert('请先指定一个要导出的URL！');
-        return;
-    }
+async function deleteHistoryItem(id, event) {
+    event.stopPropagation();
+    if (!confirm('确定要删除这条历史记录吗？')) return;
+    
     try {
-        const response = await fetch(`/api/export?url=${encodeURIComponent(url)}&format=${format}`);
+        const response = await fetch(`/api/history/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            const blob = await response.blob();
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = `export.${format === 'word' ? 'docx' : 'pdf'}`;
-            if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
-                if (filenameMatch && filenameMatch.length > 1) {
-                    filename = decodeURIComponent(filenameMatch[1]);
-                }
+            const item = document.querySelector(`.history-item[data-id="${id}"]`);
+            if (item) item.remove();
+            if (historyList.children.length === 0) {
+                historyList.innerHTML = '<li style="padding: 10px; color: var(--text-color-secondary);">暂无历史记录</li>';
             }
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(link.href);
-            alert(`${format.toUpperCase()} 文件已开始下载！`);
         } else {
-             let errorText = await response.text();
-             let errorMessage = `导出失败 (状态码: ${response.status})`;
-             if (response.status === 401) errorMessage = "未登录或会话已过期，无法导出。";
-             else errorMessage = `导出失败: ${errorText}`;
-             alert(errorMessage);
+            const errorData = await response.json();
+            alert(`删除失败: ${errorData.message || '未知错误'}`);
         }
     } catch (error) {
-        console.error(`导出${format}错误:`, error);
-        alert(`导出${format.toUpperCase()}时发生网络错误。`);
+        alert('删除历史记录时发生错误');
     }
-    hideDialog(saveDialog);
-};
+}
 
-savePdf.addEventListener('click', () => exportFile('pdf'));
-saveWord.addEventListener('click', () => exportFile('word'));
-
-urlInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') crawlBtn.click();
+getEl('clearAllHistory').addEventListener('click', async () => {
+    if (!confirm('确定要清空所有历史记录吗？此操作不可恢复！')) return;
+    
+    try {
+        const response = await fetch('/api/history/all', { method: 'DELETE' });
+        if (response.ok) {
+            const data = await response.json();
+            historyList.innerHTML = '<li style="padding: 10px; color: var(--text-color-secondary);">暂无历史记录</li>';
+            alert(`已清空所有历史记录，共删除 ${data.deletedCount} 条记录`);
+        } else {
+            const errorData = await response.json();
+            alert(`清空失败: ${errorData.message || '未知错误'}`);
+        }
+    } catch (error) {
+        alert('清空历史记录时发生错误');
+    }
 });
 
-// ----------------- 收藏夹 (本地LocalStorage实现) -----------------
+// ----------------- 收藏夹 (LocalStorage) -----------------
 let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
 function updateFavoritesDisplay() {
     if (favorites.length === 0) {
-        favoritesList.innerHTML = '<div class="empty-favorites">暂无收藏</div>';
+        favoritesList.innerHTML = '<div style="text-align:center; padding: 20px 0; color: var(--text-color-secondary);">暂无收藏</div>';
     } else {
         favoritesList.innerHTML = favorites.map((item, index) => `
             <li class="favorite-item">
                 <a href="${item.url}" target="_blank" class="favorite-url" title="${item.url}">${item.url}</a>
                 <span class="favorite-btn" onclick="deleteFavorite(${index})">
-                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </span>
-            </li>
-        `).join('');
+            </li>`).join('');
     }
 }
 
 function addFavorite(url) {
-    if (!url) return;
+    if (!url || !url.startsWith('http')) {
+        alert('请输入有效的网址！');
+        return;
+    }
     if (favorites.some(item => item.url === url)) {
         alert('该网址已收藏！');
         return;
@@ -313,20 +551,40 @@ function deleteFavorite(index) {
 
 saveFavorite.addEventListener('click', () => {
     const url = favoriteUrlInput.value.trim();
-    if (!url) {
-        alert('请输入要收藏的网址！');
-        return;
-    }
     addFavorite(url);
-    hideDialog(favoriteDialog);
+    if(url && url.startsWith('http')) hideDialog(favoriteDialog);
 });
 
 favoriteUrlInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') saveFavorite.click();
 });
 
+// ----------------- 主题切换 -----------------
+const themeToggle = getEl('themeToggle');
+const html = document.documentElement;
+
+const savedTheme = localStorage.getItem('theme') || 'dark';
+html.setAttribute('data-theme', savedTheme);
+
+function updateThemeIcon() {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    themeToggle.innerHTML = isDark 
+        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+}
+
+themeToggle.addEventListener('click', () => {
+    const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon();
+});
+
 // ----------------- 初始化 -----------------
 document.addEventListener('DOMContentLoaded', () => {
+    updateThemeIcon();
     checkLoginStatusAndLoadData();
     updateFavoritesDisplay();
+    updateInputForCrawlType();
+    showView(homeView); // 初始显示主页
 });

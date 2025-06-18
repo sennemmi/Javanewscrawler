@@ -405,4 +405,19 @@ public class NewsCrawlerService {
         }
         return null;
     }
+
+    /**
+     * 根据URL查找已爬取的新闻数据
+     * <p>
+     * 该方法从数据库中查询指定URL的新闻数据，不会触发新的爬取操作。
+     * 主要用于查看历史记录中的新闻详情。
+     * </p>
+     * 
+     * @param url 新闻URL
+     * @return 包含新闻数据的Optional对象，如果未找到则为empty
+     */
+    public Optional<NewsData> findNewsByUrl(String url) {
+        log.info("从数据库查询URL对应的新闻数据: {}", url);
+        return newsDataRepository.findByUrl(url);
+    }
 }

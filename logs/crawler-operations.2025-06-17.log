@@ -1,0 +1,4 @@
+2025-06-17 14:59:57.943 INFO  [http-nio-0.0.0.0-8080-exec-2] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-15/doc-infacvcp0828397.shtml
+2025-06-17 15:53:16.317 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-15/doc-infacvcp0828397.shtml
+2025-06-17 15:54:16.599 INFO  [http-nio-0.0.0.0-8080-exec-6] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-15/doc-infacvcp0828397.shtml
+2025-06-17 15:54:40.295 INFO  [http-nio-0.0.0.0-8080-exec-7] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.shtml

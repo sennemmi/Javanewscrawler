@@ -1,0 +1,430 @@
+/* 通用按钮 */
+.btn {
+    padding: 0 22px;
+    height: 40px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s var(--ease-cubic);
+}
+.btn.btn-secondary {
+    background: var(--hover-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+.btn.btn-secondary:hover {
+    background: var(--border-color);
+}
+.btn.btn-primary {
+    background: var(--active-color);
+    color: #fff;
+}
+.btn.btn-primary:hover {
+    opacity: 0.85;
+}
+
+/* 对话框和遮罩层 */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 1050;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s var(--ease-cubic);
+}
+.overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.dialog {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    background: var(--dialog-bg);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px var(--shadow-color);
+    z-index: 1051;
+    display: none;
+    width: 90%;
+    max-width: 400px;
+    opacity: 0;
+    transition: all 0.3s var(--ease-cubic);
+}
+
+/* 宽对话框样式 */
+.wide-dialog {
+    max-width: 800px;
+    max-height: 90vh;
+}
+
+.dialog.active {
+    display: block;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.dialog-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+.dialog-close {
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s var(--ease-cubic);
+}
+.dialog-close:hover {
+    background: var(--hover-bg);
+    color: var(--text-color);
+    transform: rotate(90deg);
+}
+
+/* 保存/导出选项 */
+.save-options { display: flex; gap: 12px; }
+.save-option {
+    flex: 1; padding: 16px; background: var(--hover-bg); border-radius: 8px; cursor: pointer;
+    text-align: center; transition: all 0.2s var(--ease-cubic); border: 1px solid var(--border-color);
+}
+.save-option:hover { background: var(--active-color); transform: translateY(-2px); border-color: var(--active-color); color: #fff; }
+.save-option svg { width: 24px; height: 24px; margin-bottom: 8px; color: var(--text-color-secondary); transition: color 0.2s; }
+.save-option:hover svg { color: #fff; }
+.save-option-title { font-size: 14px; font-weight: 500; }
+.save-option:hover .save-option-title { color: #fff; }
+
+/* 收藏夹对话框 */
+.dialog-input {
+    width: 100%; background: var(--bg-color); border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 12px; color: var(--text-color); font-size: 14px; margin-bottom: 16px;
+}
+.dialog-input:focus { outline: none; border-color: var(--active-color); }
+.dialog-footer { display: flex; justify-content: flex-end; gap: 12px; }
+.dialog-btn {
+    padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 500; transition: all 0.2s;
+}
+.dialog-btn.cancel { background: var(--hover-bg); color: var(--text-color); }
+.dialog-btn.cancel:hover { background: var(--border-color); }
+.dialog-btn.save { background: var(--active-color); color: #ffffff; }
+.dialog-btn.save:hover { opacity: 0.85; }
+
+/* 侧边栏导航和列表 */
+.logo { font-size: 20px; font-weight: 600; color: var(--active-color); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.logo svg { width: 24px; height: 24px; color: var(--active-color); }
+.nav-section { margin-bottom: 30px; overflow: hidden; }
+.nav-title { font-size: 12px; text-transform: uppercase; color: var(--text-color-secondary); margin-bottom: 10px; letter-spacing: 1px; padding: 0 10px; }
+.nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.2s; color: var(--text-color-secondary);
+}
+.nav-item:hover { background: var(--hover-bg); color: var(--text-color); }
+.nav-item.active { background: var(--active-color); color: #fff; }
+.nav-item svg { width: 18px; height: 18px; }
+
+.history-list, .favorites-list { 
+    list-style: none; 
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.history-list::-webkit-scrollbar, .favorites-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+.history-item, .favorite-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: all 0.2s; background: var(--bg-color); }
+.history-item:hover, .favorite-item:hover { background: var(--hover-bg); }
+.history-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.history-content .title, .favorite-url { color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.history-content .time { color: var(--text-color-secondary); font-size: 11px; }
+.history-item .delete-btn, .favorite-btn { opacity: 0; color: var(--text-color-secondary); padding: 4px; border-radius: 4px; transition: all 0.2s; }
+.history-item:hover .delete-btn, .favorite-item:hover .favorite-btn { opacity: 1; }
+.history-item .delete-btn:hover, .favorite-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding: 0 10px;}
+.history-action-btn { color: var(--text-color-secondary); cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.2s; }
+.history-action-btn:hover { color: var(--text-color); background: var(--hover-bg); }
+.history-action-btn.clear-all:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+.expandable-content { 
+    display: none; 
+    padding: 12px; 
+    margin-top: 8px; 
+    background: var(--bg-color); 
+    border-radius: 8px; 
+    font-size: 13px; 
+    color: var(--text-color); 
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+.expandable-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+.expandable-content.active { display: block; }
+.add-favorite-btn { display: flex; align-items: center; gap: 6px; padding: 8px; margin-top: 8px; border-radius: 4px; background: var(--hover-bg); color: var(--active-color); cursor: pointer; transition: all 0.2s; justify-content: center; }
+.add-favorite-btn:hover { background: var(--active-color); color: #fff; }
+
+/* 导出表单样式 */
+.export-form {
+    padding: 0 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+/* 下拉选择框样式 */
+.form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 14px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--active-color);
+    box-shadow: 0 0 0 2px rgba(var(--active-color-rgb), 0.2);
+}
+
+/* 输入框组样式 */
+.input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+.form-input {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 6px 0 0 6px;
+    border: 1px solid var(--border-color);
+    border-right: none;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--active-color);
+    box-shadow: 0 0 0 2px rgba(var(--active-color-rgb), 0.2);
+}
+
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background-color: var(--hover-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 0 6px 6px 0;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* 导出格式选项增强样式 */
+.export-format-options {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.save-option {
+    flex: 1;
+    padding: 16px;
+    background: var(--bg-color);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s var(--ease-cubic);
+    border: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-option:hover {
+    border-color: var(--active-color);
+    background: var(--hover-bg);
+}
+
+.save-option.active {
+    background: rgba(var(--active-color-rgb), 0.1);
+    border-color: var(--active-color);
+    box-shadow: 0 0 0 2px rgba(var(--active-color-rgb), 0.2);
+}
+
+.save-option svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 8px;
+    color: var(--text-color-secondary);
+    transition: color 0.2s;
+}
+
+.save-option.active svg,
+.save-option:hover svg {
+    color: var(--active-color);
+}
+
+.save-option-title {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.save-option.active .save-option-title {
+    color: var(--active-color);
+}
+
+/* 高级设置折叠面板 */
+.accordion {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: var(--bg-light);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.accordion-header:hover {
+    background-color: var(--bg-lighter);
+}
+
+.accordion-header svg {
+    transition: transform 0.3s ease;
+}
+
+.accordion.active .accordion-header svg {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 15px;
+}
+
+.accordion.active .accordion-content {
+    max-height: 500px;
+    padding: 15px;
+}
+
+/* 对话框页脚 */
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.dialog-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.dialog-btn.cancel {
+    background-color: var(--bg-light);
+    color: var(--text-primary);
+}
+
+.dialog-btn.save {
+    background-color: var(--primary);
+    color: white;
+}
+
+.dialog-btn.cancel:hover {
+    background-color: var(--bg-lighter);
+}
+
+.dialog-btn.save:hover {
+    background-color: var(--primary-dark);
+}
+
+/* 导出表单左右布局 */
+.export-dialog-content {
+    overflow-y: auto;
+    max-height: calc(90vh - 140px);
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.export-dialog-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.export-form-container {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.export-form-column {
+    flex: 1;
+    min-width: 0;
+}
+
+.export-form-divider {
+    width: 1px;
+    background-color: var(--border-color);
+    margin: 0 5px;
+}
+
+.settings-heading {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}

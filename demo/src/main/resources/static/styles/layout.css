@@ -1,0 +1,157 @@
+/* 主题切换按钮 */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-cubic);
+    box-shadow: 0 2px 8px var(--shadow-color);
+    z-index: 1010;
+}
+.theme-toggle:hover {
+    transform: scale(1.1);
+    background: var(--hover-bg);
+}
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-color);
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    height: 100vh;
+    padding: 20px;
+    border-right: 1px solid var(--border-color);
+    transition: all 0.3s var(--ease-cubic);
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+.sidebar.collapsed {
+    width: 60px;
+    padding: 20px 10px;
+}
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .nav-title,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .history-content,
+.sidebar.collapsed .expandable-content {
+    display: none !important;
+}
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+}
+.sidebar.collapsed .logo {
+    justify-content: center;
+}
+.sidebar.collapsed .logo svg {
+    margin: 0;
+}
+
+.toggle-sidebar {
+    position: absolute;
+    right: -12px;
+    top: 20px;
+    width: 24px;
+    height: 24px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    transition: all 0.3s var(--ease-cubic);
+    z-index: 1001;
+}
+.toggle-sidebar:hover {
+    background: var(--hover-bg);
+    color: var(--text-color);
+    transform: scale(1.1);
+}
+.toggle-sidebar svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s var(--ease-cubic);
+}
+.sidebar:not(.collapsed) .toggle-sidebar svg {
+    transform: rotate(180deg);
+}
+
+/* 主内容区域 */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-height: 100vh;
+    margin-left: 260px;
+    transition: margin-left 0.3s var(--ease-cubic);
+    z-index: 1;
+}
+.sidebar.collapsed + .main-content {
+    margin-left: 60px;
+}
+
+/* 视图容器 */
+.view-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 用户状态 */
+.user-status {
+    position: absolute;
+    top: 20px;
+    right: 80px; /* 留出主题切换按钮位置 */
+    display: flex;
+    gap: 12px;
+    z-index: 20;
+    align-items: center;
+}
+.user-status .auth-buttons {
+    display: flex;
+    gap: 12px;
+}
+.user-status .user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-color);
+}
+.user-status .user-info .username {
+    font-weight: 500;
+}
+.user-status .user-info .logout {
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 14px;
+}
+.user-status .user-info .logout:hover {
+    text-decoration: underline;
+}

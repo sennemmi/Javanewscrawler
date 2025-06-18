@@ -7,11 +7,13 @@ import com.hhu.javawebcrawler.demo.service.NewsCrawlerService;
 import com.hhu.javawebcrawler.demo.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 单个URL爬取控制器
@@ -20,7 +22,7 @@ import java.util.Map;
  * </p>
  */
 @RestController
-@RequestMapping("/api/crawl")
+@RequestMapping("/api")
 public class SingleCrawlerController extends BaseController {
 
     private static final Logger logger = LoggerFactory.getLogger(SingleCrawlerController.class);
@@ -43,7 +45,7 @@ public class SingleCrawlerController extends BaseController {
      * @param payload 请求体，必须包含 "url" 字段
      * @return 爬取到的新闻数据，包含标题、内容、发布时间等信息
      */
-    @PostMapping("/single")
+    @PostMapping("/crawl/single")
     public ResponseEntity<NewsData> crawlSingleUrl(@RequestBody Map<String, String> payload) {
         logger.info("收到单个URL爬取请求: {}", payload.get("url"));
         
@@ -75,5 +77,37 @@ public class SingleCrawlerController extends BaseController {
                 }
             })
         );
+    }
+    
+    /**
+     * 根据URL获取已爬取的新闻详情
+     * <p>
+     * 该接口用于从数据库中获取已经爬取过的新闻数据，不会触发新的爬取操作。
+     * 主要用于查看历史记录中的新闻详情。
+     * </p>
+     * 
+     * @param url 新闻URL
+     * @return 新闻详情数据
+     */
+    @GetMapping("/news/detail")
+    public ResponseEntity<NewsData> getNewsDetail(@RequestParam String url) {
+        logger.info("收到获取新闻详情请求: {}", url);
+        
+        // 验证认证状态
+        validateAuthentication();
+        
+        // 验证参数
+        validateStringParam(url, "URL");
+        
+        // 从数据库中查找新闻
+        Optional<NewsData> newsDataOpt = newsCrawlerService.findNewsByUrl(url);
+        
+        if (newsDataOpt.isPresent()) {
+            logger.info("成功获取URL的新闻详情: {}", url);
+            return ResponseEntity.ok(newsDataOpt.get());
+        } else {
+            logger.warn("未找到URL对应的新闻详情: {}", url);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 } 

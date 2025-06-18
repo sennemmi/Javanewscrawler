@@ -1,5 +1,6 @@
 package com.hhu.javawebcrawler.demo.service;
 
+import com.hhu.javawebcrawler.demo.config.DocumentExportConfig;
 import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageDataFactory;
@@ -17,6 +18,8 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
  * 文件导出服务
@@ -40,8 +44,8 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class FileExportService {
 
-    /** 默认字体路径 */
-    private static final String FONT_PATH = "static/fonts/simsun.ttf";
+    private static final Logger logger = LoggerFactory.getLogger(FileExportService.class);
+
     /** 日期时间格式化器 */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -63,6 +67,18 @@ public class FileExportService {
 
     /** 默认行间距 (相对于字体大小的倍数) */
     private static final float DEFAULT_LINE_SPACING = 1.5f;
+    
+    private final Map<String, String> fontMappings;
+    private final Map<String, Object> documentConfig;
+    
+    // 使用命名的bean注入
+    public FileExportService(
+            @org.springframework.beans.factory.annotation.Qualifier("fontPathMappings") Map<String, String> fontMappings,
+            @org.springframework.beans.factory.annotation.Qualifier("documentStyleConfig") Map<String, Object> documentExportConfig) {
+        this.fontMappings = fontMappings;
+        this.documentConfig = documentExportConfig;
+        logger.info("文件导出服务已初始化，加载了{}种字体", fontMappings.size());
+    }
 
     /**
      * 使用默认字体和间距创建 Word 文档 (.docx)
@@ -76,9 +92,19 @@ public class FileExportService {
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createWord(NewsData newsData) throws IOException {
-        return createWord(newsData, DEFAULT_LINE_SPACING, DEFAULT_TITLE_FONT_SIZE, DEFAULT_HEADING1_FONT_SIZE,
-                DEFAULT_HEADING2_FONT_SIZE, DEFAULT_HEADING3_FONT_SIZE, DEFAULT_TEXT_FONT_SIZE,
-                DEFAULT_CAPTION_FONT_SIZE, DEFAULT_FOOTER_FONT_SIZE);
+        // 使用配置中的默认值
+        float defaultLineSpacing = (Float)documentConfig.getOrDefault("defaultLineSpacing", DEFAULT_LINE_SPACING);
+        int defaultTitleFontSize = (Integer)documentConfig.getOrDefault("defaultTitleFontSize", DEFAULT_TITLE_FONT_SIZE);
+        int defaultHeading1FontSize = (Integer)documentConfig.getOrDefault("defaultHeading1FontSize", DEFAULT_HEADING1_FONT_SIZE);
+        int defaultHeading2FontSize = (Integer)documentConfig.getOrDefault("defaultHeading2FontSize", DEFAULT_HEADING2_FONT_SIZE);
+        int defaultHeading3FontSize = (Integer)documentConfig.getOrDefault("defaultHeading3FontSize", DEFAULT_HEADING3_FONT_SIZE);
+        int defaultTextFontSize = (Integer)documentConfig.getOrDefault("defaultTextFontSize", DEFAULT_TEXT_FONT_SIZE);
+        int defaultCaptionFontSize = (Integer)documentConfig.getOrDefault("defaultCaptionFontSize", DEFAULT_CAPTION_FONT_SIZE);
+        int defaultFooterFontSize = (Integer)documentConfig.getOrDefault("defaultFooterFontSize", DEFAULT_FOOTER_FONT_SIZE);
+        
+        return createWord(newsData, defaultLineSpacing, defaultTitleFontSize, defaultHeading1FontSize,
+                defaultHeading2FontSize, defaultHeading3FontSize, defaultTextFontSize,
+                defaultCaptionFontSize, defaultFooterFontSize);
     }
 
     /**
@@ -387,17 +413,27 @@ public class FileExportService {
      * 使用默认字体和间距创建 PDF 文档
      * <p>
      * 将新闻数据转换为PDF文档，使用预设的默认样式参数。
-     * 适合快速导出不需要特殊格式要求的PDF文档。
+     * 适合快速导出不需要特殊格式要求的文档。
      * </p>
      * 
      * @param newsData 要导出的新闻数据对象
-     * @return PDF文档的字节数组
+     * @return PDF文档的字节数组，可直接用于下载或保存
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData) throws IOException {
-        return createPdf(newsData, DEFAULT_LINE_SPACING, DEFAULT_TITLE_FONT_SIZE, DEFAULT_HEADING1_FONT_SIZE,
-                DEFAULT_HEADING2_FONT_SIZE, DEFAULT_HEADING3_FONT_SIZE, DEFAULT_TEXT_FONT_SIZE,
-                DEFAULT_CAPTION_FONT_SIZE, DEFAULT_FOOTER_FONT_SIZE);
+        // 使用配置中的默认值
+        float defaultLineSpacing = (Float)documentConfig.getOrDefault("defaultLineSpacing", DEFAULT_LINE_SPACING);
+        int defaultTitleFontSize = (Integer)documentConfig.getOrDefault("defaultTitleFontSize", DEFAULT_TITLE_FONT_SIZE);
+        int defaultHeading1FontSize = (Integer)documentConfig.getOrDefault("defaultHeading1FontSize", DEFAULT_HEADING1_FONT_SIZE);
+        int defaultHeading2FontSize = (Integer)documentConfig.getOrDefault("defaultHeading2FontSize", DEFAULT_HEADING2_FONT_SIZE);
+        int defaultHeading3FontSize = (Integer)documentConfig.getOrDefault("defaultHeading3FontSize", DEFAULT_HEADING3_FONT_SIZE);
+        int defaultTextFontSize = (Integer)documentConfig.getOrDefault("defaultTextFontSize", DEFAULT_TEXT_FONT_SIZE);
+        int defaultCaptionFontSize = (Integer)documentConfig.getOrDefault("defaultCaptionFontSize", DEFAULT_CAPTION_FONT_SIZE);
+        int defaultFooterFontSize = (Integer)documentConfig.getOrDefault("defaultFooterFontSize", DEFAULT_FOOTER_FONT_SIZE);
+        
+        return createPdf(newsData, defaultLineSpacing, defaultTitleFontSize, defaultHeading1FontSize,
+                defaultHeading2FontSize, defaultHeading3FontSize, defaultTextFontSize,
+                defaultCaptionFontSize, defaultFooterFontSize);
     }
 
     /**
@@ -414,12 +450,22 @@ public class FileExportService {
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData, int textFontSize, float lineSpacing) throws IOException {
+        // 为保持旧API兼容性，根据正文字体大小计算其他元素字体
         int titleFontSize = textFontSize + 8;
         int heading1FontSize = textFontSize + 6;
         int heading2FontSize = textFontSize + 4;
         int heading3FontSize = textFontSize + 2;
         int captionFontSize = Math.max(textFontSize - 2, 10);
         int footerFontSize = Math.max(textFontSize - 4, 8);
+
+        // 使用PDF特定的配置
+        Float pdfMarginTop = (Float)documentConfig.getOrDefault("pdfMarginTop", 36f);
+        Float pdfMarginBottom = (Float)documentConfig.getOrDefault("pdfMarginBottom", 36f);
+        Float pdfMarginLeft = (Float)documentConfig.getOrDefault("pdfMarginLeft", 36f);
+        Float pdfMarginRight = (Float)documentConfig.getOrDefault("pdfMarginRight", 36f);
+        
+        logger.debug("使用PDF边距配置: 上={}, 下={}, 左={}, 右={}", 
+                     pdfMarginTop, pdfMarginBottom, pdfMarginLeft, pdfMarginRight);
 
         return createPdf(newsData, lineSpacing, titleFontSize, heading1FontSize, heading2FontSize,
                 heading3FontSize, textFontSize, captionFontSize, footerFontSize);
@@ -429,7 +475,7 @@ public class FileExportService {
      * 创建 PDF 文档，支持完全自定义所有元素的字体大小和行间距
      * <p>
      * 提供最大的灵活性，允许单独设置每种元素的字体大小。
-     * 适合对PDF文档格式有精细要求的场景。
+     * 适合对文档格式有精细要求的场景。
      * </p>
      * 
      * @param newsData 要导出的新闻数据对象
@@ -445,24 +491,38 @@ public class FileExportService {
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData, float lineSpacing, int titleFontSize, int heading1FontSize,
-                            int heading2FontSize, int heading3FontSize, int textFontSize,
-                            int captionFontSize, int footerFontSize) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
-
-        try {
+                             int heading2FontSize, int heading3FontSize, int textFontSize,
+                             int captionFontSize, int footerFontSize) throws IOException {
+        
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            // 加载中文字体
             PdfFont font = loadChineseFont();
             PdfFont boldFont = loadChineseBoldFont();
+            
+            // 使用PDF特定的配置
+            Float pdfMarginTop = (Float)documentConfig.getOrDefault("pdfMarginTop", 36f);
+            Float pdfMarginBottom = (Float)documentConfig.getOrDefault("pdfMarginBottom", 36f);
+            Float pdfMarginLeft = (Float)documentConfig.getOrDefault("pdfMarginLeft", 36f);
+            Float pdfMarginRight = (Float)documentConfig.getOrDefault("pdfMarginRight", 36f);
+            
+            // 创建PDF文档
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf);
+            
+            // 设置文档边距
+            document.setMargins(pdfMarginTop, pdfMarginRight, pdfMarginBottom, pdfMarginLeft);
 
+            // 添加文档标题
             Paragraph title = new Paragraph(newsData.getTitle())
                     .setFont(boldFont)
                     .setFontSize(titleFontSize)
+                    .setBold()
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(titleFontSize * 1.2f);
+                    .setMarginBottom(titleFontSize * 0.8f);
             document.add(title);
 
+            // 添加元数据（来源和发布时间）
             String metaInfo = String.format("来源: %s   发布时间: %s",
                     newsData.getSource(),
                     newsData.getPublishTime().format(DATE_FORMATTER));
@@ -470,33 +530,31 @@ public class FileExportService {
                     .setFont(font)
                     .setFontSize(captionFontSize)
                     .setItalic()
-                    .setFontColor(ColorConstants.GRAY)
+                    .setFontColor(ColorConstants.DARK_GRAY)
                     .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginBottom(textFontSize * 1.5f);
+                    .setMarginBottom(captionFontSize * 2.0f);
             document.add(meta);
 
-            document.add(new Paragraph("\n").setMarginBottom(textFontSize * 0.5f));
-
+            // 解析HTML内容
             org.jsoup.nodes.Document htmlDoc = Jsoup.parse(newsData.getContent());
 
-            processHtmlContentForPdf(document, htmlDoc, font, boldFont, lineSpacing,
-                    heading1FontSize, heading2FontSize, heading3FontSize, textFontSize, captionFontSize);
+            // 处理正文段落和图片
+            processHtmlContentForPdf(document, htmlDoc, font, boldFont, lineSpacing, heading1FontSize,
+                    heading2FontSize, heading3FontSize, textFontSize, captionFontSize);
 
+            // 添加页脚
+            document.add(new Paragraph("\n"));
             Paragraph footer = new Paragraph("——— 由Java Web爬虫系统生成 ———")
                     .setFont(font)
                     .setFontSize(footerFontSize)
-                    .setFontColor(ColorConstants.GRAY)
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setMarginTop(textFontSize * 2);
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setTextAlignment(TextAlignment.CENTER);
             document.add(footer);
 
-        } catch (Exception e) {
-            document.add(new Paragraph("文档生成过程中发生错误: " + e.getMessage()));
-        } finally {
+            // 关闭文档
             document.close();
+            return baos.toByteArray();
         }
-
-        return baos.toByteArray();
     }
 
     /**
@@ -694,27 +752,40 @@ public class FileExportService {
      * 加载中文字体
      * <p>
      * 尝试从类路径加载中文字体，如果失败则尝试使用系统字体。
-     * 按优先级顺序尝试：指定的字体文件 -> 系统中文字体 -> 默认字体。
+     * 按优先级顺序尝试：配置的字体映射 -> 系统中文字体 -> 默认字体。
      * </p>
      * 
      * @return 可用于PDF的中文字体
      * @throws IOException 如果所有字体加载尝试都失败
      */
     private PdfFont loadChineseFont() throws IOException {
-        try {
+        // 首先尝试使用配置的宋体
+        String fontPath = fontMappings.get(DocumentExportConfig.DEFAULT_FONT_FAMILY);
+        if (fontPath != null) {
             try {
-                ClassPathResource resource = new ClassPathResource(FONT_PATH);
+                ClassPathResource resource = new ClassPathResource(fontPath);
                 if (resource.exists()) {
+                    logger.debug("使用配置的字体: {}", fontPath);
                     return PdfFontFactory.createFont(resource.getURL().toString(), PdfEncodings.IDENTITY_H);
                 }
-            } catch (Exception ignored) {
-                // 忽略异常，继续使用系统字体
+            } catch (Exception e) {
+                logger.warn("无法加载配置的字体 {}: {}", fontPath, e.getMessage());
             }
+        }
+        
+        // 其次尝试使用系统字体
+        try {
+            logger.debug("尝试使用系统字体: STSong-Light");
             return PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H");
         } catch (Exception e) {
+            logger.warn("无法加载系统字体: {}", e.getMessage());
+            
+            // 最后尝试使用默认字体
             try {
+                logger.debug("尝试使用默认字体");
                 return PdfFontFactory.createFont();
             } catch (Exception ex) {
+                logger.error("无法加载任何字体: {}", ex.getMessage());
                 throw new IOException("无法加载任何字体", ex);
             }
         }
@@ -724,30 +795,55 @@ public class FileExportService {
      * 加载中文粗体字体
      * <p>
      * 尝试从类路径加载中文粗体字体，如果失败则尝试使用系统字体。
-     * 由于宋体(SimSun)没有原生粗体变体，这里加载普通字体，再通过iText的API设置粗体样式。
+     * 优先使用黑体作为粗体字体，如果不可用，则使用宋体并通过iText的API设置粗体样式。
      * </p>
      * 
      * @return 可用于PDF的中文粗体字体
      * @throws IOException 如果所有字体加载尝试都失败
      */
     private PdfFont loadChineseBoldFont() throws IOException {
-        try {
-            // 注意: simsun.ttf 本身没有粗体变体，这里我们仍然加载它，并通过iText的API设置粗体样式。
-            // 如果需要真正的粗体效果，应提供一个粗体字文件，如 simhei.ttf
+        // 首先尝试使用配置的黑体
+        String fontPath = fontMappings.get(DocumentExportConfig.DEFAULT_TITLE_FONT_FAMILY);
+        if (fontPath != null) {
             try {
-                ClassPathResource resource = new ClassPathResource(FONT_PATH);
+                ClassPathResource resource = new ClassPathResource(fontPath);
                 if (resource.exists()) {
+                    logger.debug("使用配置的黑体字体: {}", fontPath);
                     return PdfFontFactory.createFont(resource.getURL().toString(), PdfEncodings.IDENTITY_H);
                 }
-            } catch (Exception ignored) {
-                 // 忽略异常，继续使用系统字体
+            } catch (Exception e) {
+                logger.warn("无法加载配置的黑体字体 {}: {}", fontPath, e.getMessage());
             }
+        }
+        
+        // 其次尝试使用宋体作为替代
+        fontPath = fontMappings.get(DocumentExportConfig.DEFAULT_FONT_FAMILY);
+        if (fontPath != null) {
+            try {
+                ClassPathResource resource = new ClassPathResource(fontPath);
+                if (resource.exists()) {
+                    logger.debug("使用配置的宋体字体作为粗体替代: {}", fontPath);
+                    return PdfFontFactory.createFont(resource.getURL().toString(), PdfEncodings.IDENTITY_H);
+                }
+            } catch (Exception e) {
+                logger.warn("无法加载配置的宋体字体 {}: {}", fontPath, e.getMessage());
+            }
+        }
+        
+        // 再次尝试使用系统字体
+        try {
+            logger.debug("尝试使用系统字体作为粗体: STSong-Light");
             return PdfFontFactory.createFont("STSong-Light", "UniGB-UCS2-H");
         } catch (Exception e) {
+            logger.warn("无法加载系统字体作为粗体: {}", e.getMessage());
+            
+            // 最后尝试使用默认字体
             try {
+                logger.debug("尝试使用默认字体作为粗体");
                 return PdfFontFactory.createFont();
             } catch (Exception ex) {
-                throw new IOException("无法加载任何字体", ex);
+                logger.error("无法加载任何字体作为粗体: {}", ex.getMessage());
+                throw new IOException("无法加载任何字体作为粗体", ex);
             }
         }
     }

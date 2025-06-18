@@ -18,7 +18,13 @@
    3. [按关键词爬取新闻](#23-按关键词爬取新闻)
    4. [导出新闻为文件（支持高级排版）](#24-导出新闻为文件支持高级排版)
    5. [获取用户爬取历史](#25-获取用户爬取历史)
+      1. [删除单个历史记录](#251-删除单个历史记录)
+      2. [批量删除历史记录](#252-批量删除历史记录)
+      3. [清空历史记录](#253-清空历史记录)
    6. [定时爬取任务管理](#26-定时爬取任务管理)
+      1. [查看定时爬取任务状态](#261-查看定时爬取任务状态)
+      2. [手动触发定时爬取任务](#262-手动触发定时爬取任务)
+   7. [API接入状态](#27-api接入状态)
 
 ## 1. 用户认证模块 (`/api/user`)
 
@@ -355,13 +361,13 @@ Content-Type: text/plain
 
 **路径**: `/api/export`
 
-**请求方法**: `GET`
+**请求方法**: `GET`和`POST`（两种方式都支持）
 
-**功能描述**: 【高级】导出新闻为Word或PDF，支持基础和高级字体自定义。根据提供的新闻URL和指定的格式（Word或PDF），爬取新闻内容并生成对应格式的文件供用户下载。系统会自动排版文档，包括标题、副标题、正文、图片等元素，并提供专业的排版格式。用户可以自定义各级标题和正文的字体大小和行间距，实现个性化的文档排版效果。
+**功能描述**: 【高级】导出新闻为Word或PDF，支持基础和高级字体自定义。根据提供的新闻URL和指定的格式（Word或PDF），爬取新闻内容并生成对应格式的文件供用户下载。系统会自动排版文档，包括标题、副标题、正文、图片等元素，并提供专业的排版格式。用户可以自定义各级标题和正文的字体大小和行间距，实现个性化的文档排版效果。支持选择不同字体并可调整页面宽度。
 
 **认证要求**: 需要认证（用户必须登录）
 
-**请求参数** (Query Parameters):
+#### GET方法请求参数 (Query Parameters):
 | 参数名 | 类型 | 必须 | 描述 | 可选值/默认值 | 限制条件 |
 |--------|------|------|------|--------------|----------|
 | url | String | 是 | 要导出的新闻的URL | 有效的新浪新闻URL | - |
@@ -374,8 +380,28 @@ Content-Type: text/plain
 | h3FontSize | Integer | 否 | 三级标题字体大小 | 默认值: textFontSize+2 | - |
 | captionFontSize | Integer | 否 | 图片注释和元数据字体大小 | 默认值: max(textFontSize-2, 10) | - |
 | footerFontSize | Integer | 否 | 页脚字体大小 | 默认值: max(textFontSize-4, 8) | - |
+| fontFamily | String | 否 | 文档使用的字体 | 默认值: 根据系统配置 | 推荐使用常见字体名称 |
+| pageWidth | Integer | 否 | 页面宽度（像素） | 默认值: 800 | 范围: 500-1200 |
+| skipHistoryRecord | Boolean | 否 | 是否跳过记录导出历史 | 默认值: false | - |
 
-**请求示例**:
+#### POST方法请求体参数 (JSON Body):
+| 参数名 | 类型 | 必须 | 描述 | 可选值/默认值 | 限制条件 |
+|--------|------|------|------|--------------|----------|
+| url | String | 是 | 要导出的新闻的URL | 有效的新浪新闻URL | - |
+| format | String | 是 | 导出的文件格式 | `word` 或 `pdf` | - |
+| lineSpacing | Float | 否 | 文档行间距倍数 | 默认值: 1.5 | 范围: 1.0-3.0 |
+| textFontSize | Integer | 否 | 基础正文字体大小 | 默认值: 14 | 范围: 8-32 |
+| titleFontSize | Integer | 否 | 主标题字体大小 | 默认值: textFontSize+8 | - |
+| h1FontSize | Integer | 否 | 一级标题字体大小 | 默认值: textFontSize+6 | - |
+| h2FontSize | Integer | 否 | 二级标题字体大小 | 默认值: textFontSize+4 | - |
+| h3FontSize | Integer | 否 | 三级标题字体大小 | 默认值: textFontSize+2 | - |
+| captionFontSize | Integer | 否 | 图片注释和元数据字体大小 | 默认值: max(textFontSize-2, 10) | - |
+| footerFontSize | Integer | 否 | 页脚字体大小 | 默认值: max(textFontSize-4, 8) | - |
+| fontFamily | String | 否 | 文档使用的字体 | 默认值: 根据系统配置 | 推荐使用常见字体名称 |
+| pageWidth | Integer | 否 | 页面宽度（像素） | 默认值: 800 | 范围: 500-1200 |
+| skipHistoryRecord | Boolean | 否 | 是否跳过记录导出历史 | 默认值: false | - |
+
+**GET请求示例**:
 ```
 GET /api/export?url=https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.shtml&format=pdf
 ```
@@ -385,7 +411,20 @@ GET /api/export?url=https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.sh
 ```
 
 ```
-GET /api/export?url=https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.shtml&format=pdf&textFontSize=14&titleFontSize=26&h1FontSize=22&lineSpacing=1.8
+GET /api/export?url=https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.shtml&format=pdf&textFontSize=14&titleFontSize=26&h1FontSize=22&lineSpacing=1.8&fontFamily=Microsoft%20YaHei&skipHistoryRecord=true
+```
+
+**POST请求示例**:
+```json
+{
+  "url": "https://news.sina.com.cn/c/2025-06-16/doc-infafpnq1126726.shtml",
+  "format": "pdf",
+  "textFontSize": 14,
+  "lineSpacing": 1.8,
+  "fontFamily": "Microsoft YaHei",
+  "pageWidth": 800,
+  "skipHistoryRecord": true
+}
 ```
 
 **响应**:
@@ -420,6 +459,12 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 | 500 Internal Server Error | 服务器内部错误 | 文件生成过程中发生错误、爬取新闻内容失败、字体处理问题 |
 
 **技术说明**:
+- **新增功能**:
+  - `fontFamily`参数：允许用户选择自定义字体
+  - `pageWidth`参数：允许用户调整页面宽度
+  - `skipHistoryRecord`参数：允许用户选择是否将导出操作记录到历史中
+  - 支持POST方法：更便于传递复杂参数，尤其是在前端JavaScript中
+
 - **文档排版定制**:
   - 用户可通过`textFontSize`参数控制基础正文字体大小（范围8-32）
   - 用户可通过`lineSpacing`参数控制行间距倍数（范围1.0-3.0）
@@ -451,14 +496,15 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
   - 当图片无法下载时提供替代文本
 
 - **字体支持**:
-  - 优先使用自定义中文字体(如有)
-  - 自动回退到系统内置中文字体
+  - 允许用户通过`fontFamily`参数选择字体
+  - 支持常见中文字体，如"微软雅黑"、"宋体"、"黑体"、"楷体"等
+  - 支持常见英文字体，如"Arial"、"Times New Roman"等
   - 确保中文字符正确显示
 
 - **安全处理**:
   - 对文件名进行安全处理，移除不合法的文件名字符
   - URL 编码文件名，确保兼容不同浏览器和操作系统
-  - 每次导出操作都会记录到用户的爬取历史中
+  - 支持跳过历史记录功能，避免导出操作污染用户的爬取历史
 
 - **文件格式说明**:
   - Word文档使用DOCX格式（Office Open XML），兼容Microsoft Word 2007及以上版本
@@ -598,6 +644,143 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
   - 这种设计保持了数据库结构的稳定性，同时提供了扩展灵活性
 - 导出操作会记录到历史中，并在title字段前标注导出格式
 
+### 2.5.1 删除单个历史记录
+
+**接口名称**: Delete Single History Record
+
+**路径**: `/api/history/{id}`
+
+**请求方法**: `DELETE`
+
+**功能描述**: 【基础】删除指定ID的历史记录。该接口会验证当前用户是否有权限删除指定的历史记录（只能删除自己的记录）。
+
+**认证要求**: 需要认证（用户必须登录）
+
+**路径参数**:
+| 参数名 | 类型 | 必须 | 描述 |
+|--------|------|------|------|
+| id | Long | 是 | 要删除的历史记录ID |
+
+**响应**:
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "历史记录已删除"
+}
+```
+
+**错误响应** (403 Forbidden):
+```json
+{
+  "success": false,
+  "message": "无法删除该历史记录，记录不存在或不属于当前用户"
+}
+```
+
+**可能的错误码**:
+| 状态码 | 描述 | 可能原因 |
+|--------|------|----------|
+| 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
+| 403 Forbidden | 禁止访问 | 尝试删除不属于当前用户的历史记录 |
+| 500 Internal Server Error | 服务器内部错误 | 删除操作失败 |
+
+**技术说明**:
+- 系统会验证历史记录的所有者，确保用户只能删除自己的历史记录
+- 如果记录不存在或不属于当前用户，将返回403状态码
+- 删除操作是永久性的，无法恢复
+
+### 2.5.2 批量删除历史记录
+
+**接口名称**: Batch Delete History Records
+
+**路径**: `/api/history/batch`
+
+**请求方法**: `DELETE`
+
+**功能描述**: 【高级】批量删除多条历史记录。该接口接收一个历史记录ID列表，并删除其中属于当前用户的记录。
+
+**认证要求**: 需要认证（用户必须登录）
+
+**请求头**:
+| 名称 | 必须 | 描述 |
+|------|------|------|
+| Content-Type | 是 | 必须为 `application/json` |
+
+**请求体参数**:
+| 参数名 | 类型 | 必须 | 描述 |
+|--------|------|------|------|
+| ids | Array[Long] | 是 | 要删除的历史记录ID列表 |
+
+**请求示例**:
+```json
+{
+  "ids": [1, 2, 3, 4, 5]
+}
+```
+
+**响应**:
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "成功删除 3 条历史记录",
+  "deletedCount": 3,
+  "totalRequested": 5
+}
+```
+
+**可能的错误码**:
+| 状态码 | 描述 | 可能原因 |
+|--------|------|----------|
+| 400 Bad Request | 请求参数错误 | 未提供ID列表或ID列表为空 |
+| 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
+| 500 Internal Server Error | 服务器内部错误 | 批量删除操作失败 |
+
+**技术说明**:
+- 系统会过滤ID列表，只删除属于当前用户的历史记录
+- 响应中会返回成功删除的记录数量和请求的总记录数量
+- 即使某些记录不存在或不属于当前用户，操作也会继续处理其他有效记录
+- 批量删除使用事务处理，确保操作的原子性
+
+### 2.5.3 清空历史记录
+
+**接口名称**: Clear All History Records
+
+**路径**: `/api/history/all`
+
+**请求方法**: `DELETE`
+
+**功能描述**: 【高级】清空当前用户的所有历史记录。该接口会删除当前用户的所有爬取历史记录。
+
+**认证要求**: 需要认证（用户必须登录）
+
+**请求参数**: 无
+
+**响应**:
+
+**成功响应** (200 OK):
+```json
+{
+  "success": true,
+  "message": "已清空所有历史记录，共删除 15 条",
+  "deletedCount": 15
+}
+```
+
+**可能的错误码**:
+| 状态码 | 描述 | 可能原因 |
+|--------|------|----------|
+| 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
+| 500 Internal Server Error | 服务器内部错误 | 清空操作失败 |
+
+**技术说明**:
+- 该操作会删除当前用户的所有历史记录，不可恢复
+- 操作使用事务处理，确保要么全部删除成功，要么全部保留
+- 响应中会返回成功删除的记录数量
+
 ### 2.6 定时爬取任务管理
 
 #### 2.6.1 查看定时爬取任务状态
@@ -725,10 +908,48 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 | username | String | 用户名 |
 | password | String | 密码（加密存储） |
 
+## 2.7 API接入状态
+
+本节列出了API的前端接入状态，帮助开发者了解哪些功能已经在前端实现，哪些还需要进一步开发。
+
+| API功能 | 接口路径 | 前端接入状态 | 说明 |
+|---------|----------|--------------|------|
+| 用户注册 | `/api/user/register` | ✅ 已接入 | 在register.html中实现 |
+| 用户登录 | `/api/user/login` | ✅ 已接入 | 在login.html中实现 |
+| 获取当前用户信息 | `/api/user/current` | ✅ 已接入 | 首页顶部用户状态栏显示 |
+| 爬取单个新闻URL | `/api/crawl/single` | ✅ 已接入 | 首页搜索框功能 |
+| 二级爬取 | `/api/crawl/from-index` | ❌ 未接入 | 需要开发批量爬取UI和功能 |
+| 关键词爬取 | `/api/crawl/by-keyword` | ❌ 未接入 | 需要开发关键词搜索功能 |
+| 导出新闻为文件 | `/api/export` | ✅ 已接入 | 在结果页面的导出按钮实现 |
+| 获取爬取历史 | `/api/history` | ✅ 已接入 | 侧边栏的历史记录列表 |
+| 删除历史记录 | `/api/history/{id}` | ✅ 已接入 | 历史记录项的删除按钮 |
+| 批量删除历史 | `/api/history/batch` | ❌ 未接入 | 需要实现批量选择和删除功能 |
+| 清空历史记录 | `/api/history/all` | ✅ 已接入 | 历史记录顶部的清空按钮 |
+| 定时任务状态 | `/api/scheduled/status` | ❌ 未接入 | 需要添加定时任务管理页面 |
+| 手动触发定时任务 | `/api/scheduled/trigger` | ❌ 未接入 | 需要添加定时任务管理页面 |
+
+### 待开发功能建议
+
+1. **批量爬取功能页面**
+   - 添加二级爬取选项，允许用户输入入口页URL
+   - 添加关键词爬取选项，允许用户输入关键词和可选的入口页
+
+2. **定时爬取管理页面**
+   - 展示定时任务状态
+   - 提供手动触发按钮
+   - 显示最近的定时爬取结果
+
+3. **高级历史记录管理**
+   - 添加批量选择和删除功能
+   - 按爬取类型筛选历史记录
+   - 提供历史记录导出功能
+
 ## 版本历史
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
+| 1.8.0 | 2023-12-10 | 增强导出功能，添加字体选择、页面宽度设置、跳过历史记录选项，支持POST方法，美化导出表单UI |
+| 1.7.0 | 2023-11-15 | 添加历史记录管理功能，支持删除单条、批量删除和清空历史记录 |
 | 1.6.0 | 2023-10-20 | 添加按关键词爬取功能，支持从指定入口页爬取含关键词的新闻 |
 | 1.5.0 | 2023-09-15 | 添加定时爬取功能，支持每日自动爬取新浪新闻首页 |
 | 1.4.0 | 2023-08-10 | 添加二级爬取功能，支持从新闻列表页自动爬取多篇新闻 |

@@ -60,6 +60,7 @@ public class ExportController {
      * @param h3FontSize (可选)覆盖三级标题字体大小，默认为textFontSize+2
      * @param captionFontSize (可选)覆盖图片注释和元数据字体大小，默认为max(textFontSize-2, 10)
      * @param footerFontSize (可选)覆盖页脚字体大小，默认为max(textFontSize-4, 8)
+     * @param skipHistoryRecord (可选)是否跳过记录导出历史，默认为false。设置为true时，导出操作不会被记录到历史记录中
      * @return 文件下载流，附带适当的Content-Type和Content-Disposition头
      */
     @GetMapping("/export")
@@ -73,7 +74,8 @@ public class ExportController {
             @RequestParam(required = false) Integer h2FontSize,
             @RequestParam(required = false) Integer h3FontSize,
             @RequestParam(required = false) Integer captionFontSize,
-            @RequestParam(required = false) Integer footerFontSize
+            @RequestParam(required = false) Integer footerFontSize,
+            @RequestParam(required = false, defaultValue = "false") Boolean skipHistoryRecord
     ) {
         logger.info("收到文件导出请求: URL={}, 格式={}, 文本大小={}, 行间距={}", url, format, textFontSize, lineSpacing);
         
@@ -147,12 +149,17 @@ public class ExportController {
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
             headers.setContentLength(fileContent.length);
 
-            // 记录导出历史
-            String formatInfo = String.format("%s (正文:%d,行距:%.1f)",
-                    format.toUpperCase(), textFontSize, lineSpacing);
-            String username = authentication.getName();
-            User user = userService.findByUsername(username);
-            crawlHistoryService.recordSingleUrlCrawl(user.getId(), url, "导出为" + formatInfo + ": " + newsData.getTitle());
+            // 只有当skipHistoryRecord为false时才记录导出历史
+            if (!skipHistoryRecord) {
+                String formatInfo = String.format("%s (正文:%d,行距:%.1f)",
+                        format.toUpperCase(), textFontSize, lineSpacing);
+                String username = authentication.getName();
+                User user = userService.findByUsername(username);
+                crawlHistoryService.recordSingleUrlCrawl(user.getId(), url, "导出为" + formatInfo + ": " + newsData.getTitle());
+                logger.debug("已记录导出历史");
+            } else {
+                logger.debug("跳过记录导出历史");
+            }
             
             logger.info("成功导出文件: {}, 大小: {} 字节", encodedFileName + fileExtension, fileContent.length);
             return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
