@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -44,27 +45,50 @@ public class DataAnalysisController {
     @PostMapping("/word-cloud")
     public ResponseEntity<?> getWordCloudData(@RequestBody Map<String, Object> params) {
         try {
+            logger.info("收到词云数据请求: {}", params);
+            
             // 确认用户已登录
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("未认证用户尝试访问词云API");
                 return ResponseEntity.status(401).body(Map.of("error", "用户未认证"));
             }
             
             // 获取请求参数
-            String source = params.getOrDefault("source", "title").toString();
-            Integer limit = Integer.parseInt(params.getOrDefault("limit", "50").toString());
-            LocalDateTime startTime = params.containsKey("startDate") ? 
-                    LocalDateTime.parse(params.get("startDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
-            LocalDateTime endTime = params.containsKey("endDate") ? 
-                    LocalDateTime.parse(params.get("endDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
+            String source = "keywords"; // 固定为keywords
+            Integer limit;
+            try {
+                limit = Integer.parseInt(params.getOrDefault("limit", "50").toString());
+            } catch (NumberFormatException e) {
+                logger.warn("无效的limit参数: {}", params.get("limit"));
+                limit = 50; // 默认值
+            }
+            
+            // 获取历史ID参数（必填）
+            Long historyId = null;
+            if (params.containsKey("historyId") && params.get("historyId") != null) {
+                try {
+                    historyId = Long.parseLong(params.get("historyId").toString());
+                } catch (NumberFormatException e) {
+                    logger.warn("无效的historyId参数: {}", params.get("historyId"));
+                    return ResponseEntity.badRequest().body(Map.of("error", "historyId参数无效或缺失"));
+                }
+            } else {
+                logger.warn("缺少historyId参数");
+                return ResponseEntity.badRequest().body(Map.of("error", "historyId参数缺失"));
+            }
+            
+            logger.info("词云分析参数: source={}, limit={}, historyId={}", 
+                       source, limit, historyId);
             
             // 获取词云数据
-            List<Map<String, Object>> wordCloudData = dataAnalysisService.generateWordCloudData(source, limit, startTime, endTime);
+            List<Map<String, Object>> wordCloudData = dataAnalysisService.generateWordCloudData(source, limit, historyId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("wordCloud", wordCloudData);
             response.put("total", wordCloudData.size());
             
+            logger.info("成功生成词云数据，共 {} 条", wordCloudData.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -85,26 +109,49 @@ public class DataAnalysisController {
     @PostMapping("/hot-words")
     public ResponseEntity<?> getHotWords(@RequestBody Map<String, Object> params) {
         try {
+            logger.info("收到热词排行榜请求: {}", params);
+            
             // 确认用户已登录
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("未认证用户尝试访问热词API");
                 return ResponseEntity.status(401).body(Map.of("error", "用户未认证"));
             }
             
             // 获取请求参数
-            Integer limit = Integer.parseInt(params.getOrDefault("limit", "20").toString());
-            LocalDateTime startTime = params.containsKey("startDate") ? 
-                    LocalDateTime.parse(params.get("startDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
-            LocalDateTime endTime = params.containsKey("endDate") ? 
-                    LocalDateTime.parse(params.get("endDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
+            Integer limit;
+            try {
+                limit = Integer.parseInt(params.getOrDefault("limit", "20").toString());
+            } catch (NumberFormatException e) {
+                logger.warn("无效的limit参数: {}", params.get("limit"));
+                limit = 20; // 默认值
+            }
+            
+            // 获取历史ID参数（必填）
+            Long historyId = null;
+            if (params.containsKey("historyId") && params.get("historyId") != null) {
+                try {
+                    historyId = Long.parseLong(params.get("historyId").toString());
+                } catch (NumberFormatException e) {
+                    logger.warn("无效的historyId参数: {}", params.get("historyId"));
+                    return ResponseEntity.badRequest().body(Map.of("error", "historyId参数无效或缺失"));
+                }
+            } else {
+                logger.warn("缺少historyId参数");
+                return ResponseEntity.badRequest().body(Map.of("error", "historyId参数缺失"));
+            }
+            
+            logger.info("热词分析参数: limit={}, historyId={}", 
+                       limit, historyId);
             
             // 获取热词数据
-            List<Map<String, Object>> hotWords = dataAnalysisService.getHotWords(limit, startTime, endTime);
+            List<Map<String, Object>> hotWords = dataAnalysisService.getHotWords(limit, historyId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("hotWords", hotWords);
             response.put("total", hotWords.size());
             
+            logger.info("成功生成热词数据，共 {} 条", hotWords.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -125,32 +172,50 @@ public class DataAnalysisController {
     @PostMapping("/time-trend")
     public ResponseEntity<?> getTimeTrend(@RequestBody Map<String, Object> params) {
         try {
+            logger.info("收到时间趋势分析请求: {}", params);
+            
             // 确认用户已登录
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("未认证用户尝试访问时间趋势API");
                 return ResponseEntity.status(401).body(Map.of("error", "用户未认证"));
             }
             
             // 获取请求参数
             String keyword = params.getOrDefault("keyword", "").toString();
             if (keyword.isEmpty()) {
+                logger.warn("缺少关键词参数");
                 return ResponseEntity.badRequest().body(Map.of("error", "关键词不能为空"));
             }
             
             String timeUnit = params.getOrDefault("timeUnit", "day").toString();
-            LocalDateTime startTime = params.containsKey("startDate") ? 
-                    LocalDateTime.parse(params.get("startDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
-            LocalDateTime endTime = params.containsKey("endDate") ? 
-                    LocalDateTime.parse(params.get("endDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
+            
+            // 获取历史ID参数（必填）
+            Long historyId = null;
+            if (params.containsKey("historyId") && params.get("historyId") != null) {
+                try {
+                    historyId = Long.parseLong(params.get("historyId").toString());
+                } catch (NumberFormatException e) {
+                    logger.warn("无效的historyId参数: {}", params.get("historyId"));
+                    return ResponseEntity.badRequest().body(Map.of("error", "historyId参数无效或缺失"));
+                }
+            } else {
+                logger.warn("缺少historyId参数");
+                return ResponseEntity.badRequest().body(Map.of("error", "historyId参数缺失"));
+            }
+            
+            logger.info("时间趋势分析参数: keyword={}, timeUnit={}, historyId={}", 
+                       keyword, timeUnit, historyId);
             
             // 获取时间趋势数据
-            List<Map<String, Object>> trendData = dataAnalysisService.getKeywordTimeTrend(keyword, timeUnit, startTime, endTime);
+            List<Map<String, Object>> trendData = dataAnalysisService.getKeywordTimeTrend(keyword, timeUnit, historyId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("keyword", keyword);
             response.put("timeUnit", timeUnit);
             response.put("trendData", trendData);
             
+            logger.info("成功生成时间趋势数据，共 {} 条", trendData.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -171,24 +236,40 @@ public class DataAnalysisController {
     @PostMapping("/source-distribution")
     public ResponseEntity<?> getSourceDistribution(@RequestBody Map<String, Object> params) {
         try {
+            logger.info("收到内容来源分布请求: {}", params);
+            
             // 确认用户已登录
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("未认证用户尝试访问来源分布API");
                 return ResponseEntity.status(401).body(Map.of("error", "用户未认证"));
             }
             
-            // 获取请求参数
-            LocalDateTime startTime = params.containsKey("startDate") ? 
-                    LocalDateTime.parse(params.get("startDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
-            LocalDateTime endTime = params.containsKey("endDate") ? 
-                    LocalDateTime.parse(params.get("endDate").toString(), DateTimeFormatter.ISO_DATE_TIME) : null;
+            // 获取历史ID参数（必填）
+            Long historyId = null;
+            if (params.containsKey("historyId") && params.get("historyId") != null) {
+                try {
+                    historyId = Long.parseLong(params.get("historyId").toString());
+                } catch (NumberFormatException e) {
+                    logger.warn("无效的historyId参数: {}", params.get("historyId"));
+                    return ResponseEntity.badRequest().body(Map.of("error", "historyId参数无效或缺失"));
+                }
+            } else {
+                logger.warn("缺少historyId参数");
+                return ResponseEntity.badRequest().body(Map.of("error", "historyId参数缺失"));
+            }
+            
+            logger.info("来源分布分析参数: historyId={}", 
+                       historyId);
             
             // 获取来源分布数据
-            List<Map<String, Object>> sourceData = dataAnalysisService.getSourceDistribution(startTime, endTime);
+            List<Map<String, Object>> sourceData = dataAnalysisService.getSourceDistribution(historyId);
             
             Map<String, Object> response = new HashMap<>();
             response.put("sourceDistribution", sourceData);
+            response.put("total", sourceData.size());
             
+            logger.info("成功生成来源分布数据，共 {} 条", sourceData.size());
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {

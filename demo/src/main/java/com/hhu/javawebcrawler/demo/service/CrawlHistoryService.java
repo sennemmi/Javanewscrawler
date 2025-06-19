@@ -138,4 +138,14 @@ public class CrawlHistoryService {
         
         return count;
     }
+
+    /**
+     * 根据ID查找爬取历史记录
+     * 
+     * @param id 爬取历史记录ID
+     * @return 爬取历史记录（可能不存在）
+     */
+    public Optional<CrawlHistory> findById(Long id) {
+        return crawlHistoryRepository.findById(id);
+    }
 }

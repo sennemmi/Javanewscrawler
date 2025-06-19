@@ -1,19 +1,97 @@
- /**
+/**
  * 数据分析页面脚本
  */
 $(document).ready(function() {
+    // 初始化主题切换
+    initTheme();
+    
+    // 初始化侧边栏
+    initSidebar();
+    
     // 检查用户登录状态
     checkLoginStatus();
 
-    // 初始化时间范围（默认过去30天）
-    initDateRange();
+    // 从URL中获取historyId参数
+    getHistoryIdFromUrl();
 
     // 初始化所有图表
     initAllCharts();
 
     // 事件绑定
     bindEvents();
+    
+    // 加载历史记录
+    loadHistoryList();
 });
+
+// 全局变量，存储从URL中获取的历史ID
+let historyId = null;
+
+/**
+ * 初始化主题切换
+ */
+function initTheme() {
+    // 获取当前主题
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // 设置主题切换按钮图标
+    updateThemeIcon();
+    
+    // 主题切换事件
+    $('#themeToggle').on('click', function() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        updateThemeIcon();
+    });
+}
+
+/**
+ * 更新主题图标
+ */
+function updateThemeIcon() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const iconHtml = currentTheme === 'light' 
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
+    
+    $('#themeToggle').html(iconHtml);
+}
+
+/**
+ * 初始化侧边栏
+ */
+function initSidebar() {
+    // 侧边栏折叠/展开
+    $('#toggleSidebar').on('click', function() {
+        $('#sidebar').toggleClass('collapsed');
+    });
+}
+
+/**
+ * 从URL中获取historyId参数
+ */
+function getHistoryIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    historyId = urlParams.get('historyId');
+    
+    if (!historyId) {
+        console.error("URL中缺少historyId参数，数据分析页面无法正常加载。");
+        // 可以考虑重定向回主页或显示一个通用错误页面
+        // window.location.href = 'index.html'; 
+    }
+    
+    if (historyId) {
+        // 如果有historyId参数，显示过滤提示
+        $('#history-filter-info').removeClass('d-none').text(`当前正在分析爬取历史ID: ${historyId} 的数据`);
+    } else {
+        $('#history-filter-info').addClass('d-none');
+    }
+}
 
 /**
  * 检查用户登录状态
@@ -24,32 +102,58 @@ function checkLoginStatus() {
         type: 'GET',
         success: function(response) {
             if (response.username) {
-                $('#username').text('欢迎, ' + response.username);
+                // 更新用户信息
+                $('.user-info').show();
+                $('.auth-buttons').hide();
+                $('#username').text(response.username);
             } else {
-                // 未登录，跳转到登录页
-                window.location.href = 'login.html';
+                // 未登录，显示登录按钮
+                $('.user-info').hide();
+                $('.auth-buttons').show();
             }
         },
         error: function() {
-            // 获取用户信息失败，跳转到登录页
-            window.location.href = 'login.html';
+            // 获取用户信息失败，显示登录按钮
+            $('.user-info').hide();
+            $('.auth-buttons').show();
         }
     });
 }
 
 /**
- * 初始化时间范围（默认过去30天）
+ * 加载历史记录列表
  */
-function initDateRange() {
-    const now = new Date();
-    const endDate = now.toISOString().slice(0, 16);
-    
-    // 30天前
-    const startDate = new Date(now);
-    startDate.setDate(now.getDate() - 30);
-    
-    $('#endDate').val(endDate);
-    $('#startDate').val(startDate.toISOString().slice(0, 16));
+function loadHistoryList() {
+    $.ajax({
+        url: '/api/history/recent?limit=5',
+        type: 'GET',
+        success: function(response) {
+            const historyList = $('#historyList');
+            historyList.empty();
+            
+            if (response && response.length > 0) {
+                response.forEach(function(item) {
+                    const historyItem = $('<li class="history-item"></li>');
+                    const historyLink = $('<a href="#"></a>').text(item.title || `爬取记录 #${item.id}`);
+                    
+                    historyLink.on('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = `analysis.html?historyId=${item.id}`;
+                    });
+                    
+                    historyItem.append(historyLink);
+                    historyList.append(historyItem);
+                });
+            } else {
+                historyList.append('<li class="history-empty">暂无历史记录</li>');
+            }
+        },
+        error: function() {
+            const historyList = $('#historyList');
+            historyList.empty();
+            historyList.append('<li class="history-empty">加载历史失败</li>');
+        }
+    });
 }
 
 /**
@@ -69,18 +173,18 @@ function initAllCharts() {
  * 绑定事件处理
  */
 function bindEvents() {
-    // 应用日期过滤器
-    $('#apply-date-filter').on('click', function() {
-        refreshAllCharts();
-    });
+    // 应用日期过滤器 (此按钮已移除，此处事件绑定不再需要)
+    // $('#apply-date-filter').on('click', function() {
+    //     refreshAllCharts();
+    // });
     
-    // 词云数据源切换
-    $('.word-cloud-source').on('click', function(e) {
-        e.preventDefault();
-        const source = $(this).data('source');
-        $('#wordCloudSourceDropdown').text('数据源: ' + getSourceName(source));
-        loadWordCloud(source);
-    });
+    // 词云数据源切换 (已移除，词云固定分析关键词)
+    // $('.word-cloud-source').on('click', function(e) {
+    //     e.preventDefault();
+    //     const source = $(this).data('source');
+    //     $('#wordCloudSourceDropdown').text('数据源: ' + getSourceName(source));
+    //     loadWordCloud(source);
+    // });
     
     // 时间趋势查询
     $('#search-trend').on('click', function() {
@@ -88,7 +192,14 @@ function bindEvents() {
         if (keyword) {
             loadTimeTrend(keyword);
         } else {
-            alert('请输入关键词');
+            showMessage('请输入关键词', 'warning');
+        }
+    });
+    
+    // 按回车键搜索趋势
+    $('#trend-keyword').on('keypress', function(e) {
+        if (e.which === 13) {
+            $('#search-trend').click();
         }
     });
     
@@ -102,83 +213,102 @@ function bindEvents() {
             }
         });
     });
+    
+    // 清空历史记录
+    $('#clearAllHistory').on('click', function() {
+        if (confirm('确定要清空所有历史记录吗？')) {
+            $.ajax({
+                url: '/api/history/clear',
+                type: 'DELETE',
+                success: function() {
+                    $('#historyList').empty().append('<li class="history-empty">暂无历史记录</li>');
+                    // 清空所有图表并提示用户选择历史记录
+                    historyId = null; // 重置historyId
+                    $('#history-filter-info').addClass('d-none');
+                    initAllCharts(); // 重新初始化图表，会显示空数据提示
+                }
+            });
+        }
+    });
 }
 
 /**
  * 刷新所有图表
  */
 function refreshAllCharts() {
-    loadWordCloud($('#wordCloudSourceDropdown').text().includes('标题') ? 'title' : 
-                 $('#wordCloudSourceDropdown').text().includes('正文') ? 'content' : 'keywords');
+    loadWordCloud(); // 词云数据固定为关键词
     loadHotWords();
     loadSourceDistribution();
     
-    const keyword = $('#trend-keyword').val().trim();
-    if (keyword) {
-        loadTimeTrend(keyword);
-    }
+    // 重新加载热门关键词，确保时间趋势图更新
+    loadInitialTrendKeyword();
 }
 
 /**
  * 获取数据源名称
  */
-function getSourceName(source) {
-    switch(source) {
-        case 'title': return '标题';
-        case 'content': return '正文';
-        case 'keywords': return '关键词';
-        default: return '标题';
-    }
-}
+// function getSourceName(source) {
+//     switch(source) {
+//         case 'title': return '标题';
+//         case 'content': return '正文';
+//         case 'keywords': return '关键词';
+//         default: return '标题';
+//     }
+// }
 
 /**
- * 获取当前时间范围参数
+ * 获取当前时间范围参数 (现在只返回historyId)
  */
 function getTimeRangeParams() {
-    const startDate = $('#startDate').val() ? new Date($('#startDate').val()).toISOString() : null;
-    const endDate = $('#endDate').val() ? new Date($('#endDate').val()).toISOString() : null;
+    const params = {};
     
-    return {
-        startDate: startDate,
-        endDate: endDate
-    };
+    // 如果有历史ID，添加到参数中
+    if (historyId) {
+        params.historyId = historyId;
+    }
+    
+    return params;
 }
 
 /**
- * 加载词云数据并渲染
+ * 加载词云数据
+ * 始终分析关键词数据，不再接收source参数
  */
-function loadWordCloud(source = 'title') {
-    // 显示加载中，隐藏空数据提示
-    $('#word-cloud-loading').show();
-    $('#word-cloud-empty').addClass('d-none');
-    $('#word-cloud-container').html('');
-    
-    // 准备请求参数
-    const params = {
-        source: source,
-        limit: 100,
-        ...getTimeRangeParams()
+function loadWordCloud() {
+    if (!historyId) {
+        showMessage('请先选择或进行一次爬取历史，然后查看数据分析', 'info');
+        clearChart('wordCloudChart', '暂无词云数据，请选择历史记录');
+        return;
+    }
+
+    const limit = $('#wordCloudLimit').val();
+    const requestData = {
+        historyId: parseInt(historyId),
+        limit: parseInt(limit)
     };
-    
-    // 发送请求
+
     $.ajax({
         url: '/api/analysis/word-cloud',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify(params),
+        data: JSON.stringify(requestData),
         success: function(response) {
-            $('#word-cloud-loading').hide();
-            
-            if (response.wordCloud && response.wordCloud.length > 0) {
+            if (response && response.wordCloud && response.wordCloud.length > 0) {
                 renderWordCloud(response.wordCloud);
             } else {
+                console.warn('词云数据为空或格式不正确');
                 $('#word-cloud-empty').removeClass('d-none');
             }
         },
         error: function(xhr) {
-            $('#word-cloud-loading').hide();
-            $('#word-cloud-empty').removeClass('d-none');
-            console.error('加载词云数据失败:', xhr.responseText);
+            console.error('加载词云数据失败:', xhr.status, xhr.statusText);
+            console.error('响应内容:', xhr.responseText);
+            try {
+                const errorResponse = JSON.parse(xhr.responseText);
+                console.error('错误详情:', errorResponse);
+            } catch (e) {
+                console.error('无法解析错误响应');
+            }
         }
     });
 }
@@ -187,31 +317,74 @@ function loadWordCloud(source = 'title') {
  * 渲染词云
  */
 function renderWordCloud(wordCloudData) {
+    console.log('开始渲染词云, 数据条数:', wordCloudData.length);
+    
     // 转换数据格式为wordcloud2.js所需的格式
     const list = wordCloudData.map(item => [item.text, item.weight]);
     
-    // 渲染词云
-    WordCloud(document.getElementById('word-cloud-container'), { 
-        list: list,
-        gridSize: 8,
-        weightFactor: 1,
-        fontFamily: 'Microsoft YaHei, sans-serif',
-        color: function() {
-            return 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 50%)';
-        },
-        hover: function(item) {
-            if (item) {
-                console.log(item[0] + ': ' + item[1]);
-            }
-        },
-        click: function(item) {
-            if (item) {
-                $('#trend-keyword').val(item[0]);
-                loadTimeTrend(item[0]);
-            }
-        },
-        classes: 'word-cloud-text'
-    });
+    console.log('词云数据前10项:', list.slice(0, 10));
+    
+    // 获取容器尺寸
+    const container = document.getElementById('word-cloud-container');
+    const width = container.offsetWidth;
+    const height = container.offsetHeight || 300;
+    
+    console.log('词云容器尺寸:', width, 'x', height);
+    
+    // 获取主题颜色
+    const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    try {
+        // 清空容器
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        
+        // 渲染词云
+        WordCloud(container, { 
+            list: list,
+            gridSize: 8,
+            weightFactor: function (size) {
+                return Math.pow(size, 0.8) * width / 1000;
+            },
+            fontFamily: 'Microsoft YaHei, sans-serif',
+            color: function() {
+                // 根据主题使用不同的颜色范围
+                if (isDarkTheme) {
+                    return 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 60%)';
+                } else {
+                    return 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 50%)';
+                }
+            },
+            hover: function(item) {
+                if (item) {
+                    console.log(item[0] + ': ' + item[1]);
+                }
+            },
+            click: function(item) {
+                if (item) {
+                    $('#trend-keyword').val(item[0]);
+                    loadTimeTrend(item[0]);
+                }
+            },
+            classes: 'word-cloud-text',
+            drawOutOfBound: false,
+            shrinkToFit: true,
+            minSize: 10
+        });
+        console.log('词云渲染完成');
+    } catch (e) {
+        console.error('词云渲染失败:', e);
+        $('#word-cloud-empty').removeClass('d-none').html(`
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+            <span>词云渲染失败: ${e.message}</span>
+        `);
+    }
 }
 
 /**
@@ -228,6 +401,8 @@ function loadHotWords() {
         ...getTimeRangeParams()
     };
     
+    console.log('热词请求参数:', params);
+    
     // 发送请求
     $.ajax({
         url: '/api/analysis/hot-words',
@@ -237,16 +412,27 @@ function loadHotWords() {
         success: function(response) {
             $('#hot-words-loading').hide();
             
-            if (response.hotWords && response.hotWords.length > 0) {
+            console.log('热词API响应:', response);
+            
+            if (response && response.hotWords && response.hotWords.length > 0) {
+                console.log('热词数据项数:', response.hotWords.length);
                 renderHotWords(response.hotWords);
             } else {
+                console.warn('热词数据为空或格式不正确');
                 $('#hot-words-empty').removeClass('d-none');
             }
         },
         error: function(xhr) {
             $('#hot-words-loading').hide();
             $('#hot-words-empty').removeClass('d-none');
-            console.error('加载热词数据失败:', xhr.responseText);
+            console.error('加载热词数据失败:', xhr.status, xhr.statusText);
+            console.error('响应内容:', xhr.responseText);
+            try {
+                const errorResponse = JSON.parse(xhr.responseText);
+                console.error('错误详情:', errorResponse);
+            } catch (e) {
+                console.error('无法解析错误响应');
+            }
         }
     });
 }
@@ -255,66 +441,96 @@ function loadHotWords() {
  * 渲染热词排行榜
  */
 function renderHotWords(hotWords) {
-    // 初始化ECharts实例
-    const chart = echarts.init(document.getElementById('hot-words-chart'));
+    console.log('开始渲染热词排行榜, 数据条数:', hotWords.length);
     
-    // 数据预处理
-    const data = hotWords.map(item => ({
-        name: item.word,
-        value: item.count
-    }));
-    
-    // 图表配置
-    const option = {
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'shadow'
-            }
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'value',
-            boundaryGap: [0, 0.01]
-        },
-        yAxis: {
-            type: 'category',
-            data: data.map(item => item.name),
-            axisLabel: {
-                interval: 0,
-                rotate: 0
-            }
-        },
-        series: [
-            {
-                name: '出现次数',
-                type: 'bar',
-                data: data.map(item => item.value),
-                itemStyle: {
-                    color: function(params) {
-                        const colorList = [
-                            '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae',
-                            '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570'
-                        ];
-                        return colorList[params.dataIndex % colorList.length];
+    try {
+        // 初始化ECharts实例
+        const chartContainer = document.getElementById('hot-words-chart');
+        const chart = echarts.init(chartContainer);
+        
+        // 数据预处理，确保至少有数据
+        if (hotWords.length === 0) {
+            console.warn('热词数据为空，无法渲染');
+            $('#hot-words-empty').removeClass('d-none');
+            return;
+        }
+        
+        // 限制显示数量，太多会挤在一起
+        const displayCount = Math.min(hotWords.length, 15);
+        hotWords = hotWords.slice(0, displayCount);
+        
+        // 转换数据格式
+        const data = hotWords.map(item => ({
+            name: item.word,
+            value: item.count
+        }));
+        
+        console.log('热词图表数据:', data);
+        
+        // 图表配置
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'value',
+                boundaryGap: [0, 0.01]
+            },
+            yAxis: {
+                type: 'category',
+                data: data.map(item => item.name),
+                axisLabel: {
+                    interval: 0,
+                    rotate: 0
+                }
+            },
+            series: [
+                {
+                    name: '出现次数',
+                    type: 'bar',
+                    data: data.map(item => item.value),
+                    itemStyle: {
+                        color: function(params) {
+                            const colorList = [
+                                '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae',
+                                '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570'
+                            ];
+                            return colorList[params.dataIndex % colorList.length];
+                        }
                     }
                 }
-            }
-        ]
-    };
-    
-    // 设置图表
-    chart.setOption(option);
-    
-    // 窗口大小改变时，调整图表大小
-    window.addEventListener('resize', function() {
-        chart.resize();
-    });
+            ]
+        };
+        
+        // 设置图表
+        chart.setOption(option);
+        console.log('热词排行榜渲染完成');
+        
+        // 窗口大小改变时，调整图表大小
+        window.addEventListener('resize', function() {
+            chart.resize();
+        });
+    } catch (e) {
+        console.error('热词排行榜渲染失败:', e);
+        $('#hot-words-empty').removeClass('d-none').html(`
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
+                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
+            <span>热词排行榜渲染失败: ${e.message}</span>
+        `);
+    }
 }
 
 /**

@@ -138,3 +138,8 @@
     color: #ef4444;
     margin-bottom: 12px;
 }
+
+.analysis-btn {
+    background-color: var(--active-color);
+    color: white;
+}

@@ -1,8 +1,10 @@
 package com.hhu.javawebcrawler.demo.controller;
 
 import com.hhu.javawebcrawler.demo.entity.CrawlHistory;
+import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.hhu.javawebcrawler.demo.entity.User;
 import com.hhu.javawebcrawler.demo.service.CrawlHistoryService;
+import com.hhu.javawebcrawler.demo.service.NewsCrawlerService;
 import com.hhu.javawebcrawler.demo.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 历史记录控制器
@@ -29,10 +32,12 @@ public class HistoryController {
     
     private final CrawlHistoryService crawlHistoryService;
     private final UserService userService;
+    private final NewsCrawlerService newsCrawlerService;
 
-    public HistoryController(CrawlHistoryService crawlHistoryService, UserService userService) {
+    public HistoryController(CrawlHistoryService crawlHistoryService, UserService userService, NewsCrawlerService newsCrawlerService) {
         this.crawlHistoryService = crawlHistoryService;
         this.userService = userService;
+        this.newsCrawlerService = newsCrawlerService;
     }
 
     /**
@@ -207,5 +212,47 @@ public class HistoryController {
             "message", String.format("已清空所有历史记录，共删除 %d 条", deletedCount),
             "deletedCount", deletedCount
         ));
+    }
+
+    /**
+     * 获取爬取历史关联的新闻数据
+     * <p>
+     * 根据爬取历史ID获取关联的所有新闻数据，确保只能查看自己的记录。
+     * </p>
+     * 
+     * @param historyId 爬取历史记录ID
+     * @return 关联的新闻数据列表
+     */
+    @GetMapping("/history/{historyId}/news")
+    public ResponseEntity<List<NewsData>> getNewsByHistoryId(@PathVariable Long historyId) {
+        logger.info("收到获取爬取历史关联新闻数据请求，历史ID: {}", historyId);
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            logger.warn("未认证用户尝试获取爬取历史关联新闻数据");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+        
+        String username = authentication.getName();
+        Long userId;
+        try {
+            User user = userService.findByUsername(username);
+            userId = user.getId();
+        } catch (Exception e) {
+            logger.error("获取用户ID失败: {} - {}", username, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+        
+        // 验证历史记录是否属于当前用户
+        Optional<CrawlHistory> historyOpt = crawlHistoryService.findById(historyId);
+        if (!historyOpt.isPresent() || !historyOpt.get().getUserId().equals(userId)) {
+            logger.warn("用户 [{}] 尝试访问不存在或不属于该用户的历史记录 ID: {}", username, historyId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+        
+        // 获取关联的新闻数据
+        List<NewsData> newsList = newsCrawlerService.findNewsByCrawlHistoryId(historyId);
+        logger.info("成功获取历史记录 ID: {} 关联的新闻数据，共 {} 条", historyId, newsList.size());
+        return ResponseEntity.ok(newsList);
     }
 } 

@@ -1,5 +1,6 @@
 package com.hhu.javawebcrawler.demo.controller;
 
+import com.hhu.javawebcrawler.demo.entity.CrawlHistory;
 import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.hhu.javawebcrawler.demo.entity.User;
 import com.hhu.javawebcrawler.demo.service.CrawlHistoryService;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 批量爬取控制器
@@ -35,6 +37,7 @@ public class BatchCrawlerController {
     private final NewsCrawlerService newsCrawlerService;
     private final CrawlHistoryService crawlHistoryService;
     private final UserService userService;
+    private final ObjectMapper objectMapper;
 
     public BatchCrawlerController(NewsCrawlerService newsCrawlerService, 
                              CrawlHistoryService crawlHistoryService,
@@ -42,6 +45,7 @@ public class BatchCrawlerController {
         this.newsCrawlerService = newsCrawlerService;
         this.crawlHistoryService = crawlHistoryService;
         this.userService = userService;
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -81,14 +85,40 @@ public class BatchCrawlerController {
         }
 
         try {
-            // 执行二级爬取
-            List<NewsData> crawledNews = newsCrawlerService.crawlNewsFromIndexPage(indexUrl);
+            // 先创建爬取历史记录
+            CrawlHistory crawlHistory = new CrawlHistory();
+            crawlHistory.setUserId(userId);
+            crawlHistory.setCrawlType("INDEX_CRAWL");
+            crawlHistory.setUrl(indexUrl);
+            crawlHistory.setTitle("二级爬取任务，入口页面: " + indexUrl);
             
-            // 记录爬取历史
+            // 保存爬取历史记录，获取ID
+            crawlHistory = crawlHistoryService.saveHistory(crawlHistory);
+            
+            // 执行二级爬取，传递爬取历史对象
+            List<NewsData> crawledNews = newsCrawlerService.crawlNewsFromIndexPage(indexUrl, crawlHistory);
+            
+            // 更新爬取历史记录的标题和参数
+            crawlHistory.setTitle("二级爬取，成功获取 " + crawledNews.size() + " 条新闻");
+            
+            // 记录参数
             Map<String, Object> params = new HashMap<>();
             params.put("entryUrl", indexUrl);
+            params.put("totalCount", crawledNews.size());
+            params.put("sampleUrls", crawledNews.stream()
+                    .limit(5)
+                    .map(NewsData::getUrl)
+                    .collect(Collectors.toList()));
             
-            crawlHistoryService.recordIndexCrawl(userId, indexUrl, "二级爬取，成功获取 " + crawledNews.size() + " 条新闻", params);
+            try {
+                crawlHistory.setParams(objectMapper.writeValueAsString(params));
+            } catch (Exception e) {
+                logger.warn("转换参数时出错: {}", e.getMessage());
+                crawlHistory.setParams("{\"error\":\"转换参数时出错\"}");
+            }
+            
+            // 更新历史记录
+            crawlHistoryService.saveHistory(crawlHistory);
             
             // 整理返回结果
             Map<String, Object> result = new HashMap<>();
@@ -147,15 +177,41 @@ public class BatchCrawlerController {
         }
 
         try {
-            // 执行关键词爬取
-            List<NewsData> crawledNews = newsCrawlerService.crawlNewsByKeyword(keyword, indexUrl);
+            // 先创建爬取历史记录
+            CrawlHistory crawlHistory = new CrawlHistory();
+            crawlHistory.setUserId(userId);
+            crawlHistory.setCrawlType("INDEX_CRAWL");
+            crawlHistory.setUrl(indexUrl);
+            crawlHistory.setTitle("关键词爬取任务: " + keyword);
             
-            // 记录爬取历史
+            // 保存爬取历史记录，获取ID
+            crawlHistory = crawlHistoryService.saveHistory(crawlHistory);
+            
+            // 执行关键词爬取，传递爬取历史对象
+            List<NewsData> crawledNews = newsCrawlerService.crawlNewsByKeyword(keyword, indexUrl, crawlHistory);
+            
+            // 更新爬取历史记录的标题和参数
+            crawlHistory.setTitle("关键词爬取: " + keyword + "，成功获取 " + crawledNews.size() + " 条新闻");
+            
+            // 记录参数
             Map<String, Object> params = new HashMap<>();
             params.put("keyword", keyword);
             params.put("entryUrl", indexUrl);
+            params.put("totalCount", crawledNews.size());
+            params.put("sampleUrls", crawledNews.stream()
+                    .limit(5)
+                    .map(NewsData::getUrl)
+                    .collect(Collectors.toList()));
             
-            crawlHistoryService.recordIndexCrawl(userId, indexUrl, "关键词爬取: " + keyword + "，成功获取 " + crawledNews.size() + " 条新闻", params);
+            try {
+                crawlHistory.setParams(objectMapper.writeValueAsString(params));
+            } catch (Exception e) {
+                logger.warn("转换参数时出错: {}", e.getMessage());
+                crawlHistory.setParams("{\"error\":\"转换参数时出错\"}");
+            }
+            
+            // 更新历史记录
+            crawlHistoryService.saveHistory(crawlHistory);
             
             // 整理返回结果
             Map<String, Object> result = new HashMap<>();

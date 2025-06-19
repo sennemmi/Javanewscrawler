@@ -1,6 +1,7 @@
 package com.hhu.javawebcrawler.demo.controller;
 
 import com.hhu.javawebcrawler.demo.controller.base.BaseController;
+import com.hhu.javawebcrawler.demo.entity.CrawlHistory;
 import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.hhu.javawebcrawler.demo.service.CrawlHistoryService;
 import com.hhu.javawebcrawler.demo.service.NewsCrawlerService;
@@ -46,7 +47,7 @@ public class SingleCrawlerController extends BaseController {
      * @return 爬取到的新闻数据，包含标题、内容、发布时间等信息
      */
     @PostMapping("/crawl/single")
-    public ResponseEntity<NewsData> crawlSingleUrl(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<Object> crawlSingleUrl(@RequestBody Map<String, String> payload) {
         logger.info("收到单个URL爬取请求: {}", payload.get("url"));
         
         // 验证认证状态
@@ -63,14 +64,36 @@ public class SingleCrawlerController extends BaseController {
         return ResponseEntity.ok(
             executeWithExceptionHandling(() -> {
                 try {
-                    // 爬取新闻
-                    NewsData newsData = newsCrawlerService.crawlAndSaveSinaNews(url);
+                    // 先创建爬取历史记录
+                    CrawlHistory crawlHistory = new CrawlHistory();
+                    crawlHistory.setUserId(userId);
+                    crawlHistory.setCrawlType("SINGLE_URL");
+                    crawlHistory.setUrl(url);
+                    crawlHistory.setTitle("单URL爬取任务: " + url);
                     
-                    // 记录爬取历史
-                    crawlHistoryService.recordSingleUrlCrawl(userId, url, newsData.getTitle());
+                    // 保存爬取历史记录，获取ID
+                    crawlHistory = crawlHistoryService.saveHistory(crawlHistory);
                     
-                    logger.info("成功爬取URL: {}, 标题: {}", url, newsData.getTitle());
-                    return newsData;
+                    // 爬取新闻，并关联爬取历史
+                    Optional<NewsData> newsDataOpt = newsCrawlerService.crawlAndSaveSinaNews(url, crawlHistory);
+                    
+                    if (newsDataOpt.isPresent()) {
+                        NewsData newsData = newsDataOpt.get();
+                        
+                        // 更新爬取历史记录的标题
+                        crawlHistory.setTitle(newsData.getTitle());
+                        crawlHistoryService.saveHistory(crawlHistory);
+                        
+                        logger.info("成功爬取URL: {}, 标题: {}", url, newsData.getTitle());
+                        return newsData;
+                    } else {
+                        // 爬取失败，更新历史记录
+                        crawlHistory.setTitle("爬取失败: 内容提取失败");
+                        crawlHistoryService.saveHistory(crawlHistory);
+                        
+                        logger.warn("爬取URL成功，但内容提取失败，跳过保存和记录历史: {}", url);
+                        return new ResponseEntity<>("内容提取失败", HttpStatus.NO_CONTENT).getBody();
+                    }
                 } catch (IOException e) {
                     logger.error("爬取URL失败: {} - {}", url, e.getMessage());
                     throw new RuntimeException("爬取URL失败: " + e.getMessage(), e);
@@ -99,15 +122,30 @@ public class SingleCrawlerController extends BaseController {
         // 验证参数
         validateStringParam(url, "URL");
         
-        // 从数据库中查找新闻
-        Optional<NewsData> newsDataOpt = newsCrawlerService.findNewsByUrl(url);
-        
-        if (newsDataOpt.isPresent()) {
-            logger.info("成功获取URL的新闻详情: {}", url);
-            return ResponseEntity.ok(newsDataOpt.get());
-        } else {
-            logger.warn("未找到URL对应的新闻详情: {}", url);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        try {
+            // 尝试URL解码，处理可能的编码问题
+            String decodedUrl = java.net.URLDecoder.decode(url, "UTF-8");
+            logger.info("解码后的URL: {}", decodedUrl);
+            
+            // 先查询原始URL
+            Optional<NewsData> newsDataOpt = newsCrawlerService.findNewsByUrl(url);
+            
+            // 如果找不到，尝试用解码后的URL查询
+            if (!newsDataOpt.isPresent()) {
+                newsDataOpt = newsCrawlerService.findNewsByUrl(decodedUrl);
+                logger.info("使用解码后URL重新查询");
+            }
+            
+            if (newsDataOpt.isPresent()) {
+                logger.info("成功获取新闻详情: {}", newsDataOpt.get().getTitle());
+                return ResponseEntity.ok(newsDataOpt.get());
+            } else {
+                logger.warn("未找到URL对应的新闻详情，原始URL: {}, 解码URL: {}", url, decodedUrl);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (Exception e) {
+            logger.error("获取新闻详情时发生错误: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 } 

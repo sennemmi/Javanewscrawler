@@ -1,5 +1,6 @@
 package com.hhu.javawebcrawler.demo.service;
 
+import com.hhu.javawebcrawler.demo.entity.CrawlHistory;
 import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.hhu.javawebcrawler.demo.repository.NewsDataRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -127,13 +128,19 @@ public class NewsCrawlerService {
 
         // 3. 遍历有效链接，调用单页爬虫进行爬取
         int count = 0;
+        int skippedCount = 0;
         for (String urlToCrawl : validUrlsToCrawl) {
             count++;
             log.info("二级爬取进度: {}/{}, 正在处理URL: {}", count, validUrlsToCrawl.size(), urlToCrawl);
             try {
                 // 调用现有的单页爬取和保存方法
-                NewsData newsData = crawlAndSaveSinaNews(urlToCrawl);
-                crawledNewsList.add(newsData);
+                Optional<NewsData> newsDataOpt = crawlAndSaveSinaNews(urlToCrawl);
+                if (newsDataOpt.isPresent()) {
+                    crawledNewsList.add(newsDataOpt.get());
+                } else {
+                    skippedCount++;
+                    log.info("二级爬取过程中，URL {} 的内容提取失败，已跳过", urlToCrawl);
+                }
                 // 可以加个延时，防止请求过于频繁
                 Thread.sleep(500); // 暂停500毫秒
             } catch (Exception e) {
@@ -142,10 +149,84 @@ public class NewsCrawlerService {
             }
         }
 
-        log.info("二级爬取任务完成，共成功爬取并保存了 {} 条新闻。", crawledNewsList.size());
+        log.info("二级爬取任务完成，共成功爬取并保存了 {} 条新闻，跳过了 {} 条内容提取失败的新闻。", crawledNewsList.size(), skippedCount);
         return crawledNewsList;
     }
     
+    /**
+     * 二级爬取功能（关联到特定爬取历史）：从一个入口页面（如新闻首页）爬取所有符合条件的新闻详情页
+     * <p>
+     * 这是{@link #crawlNewsFromIndexPage(String)}的扩展版本，支持将爬取到的新闻与特定的爬取历史记录关联起来。
+     * </p>
+     *
+     * @param indexUrl 入口页面的URL，例如 "https://news.sina.com.cn/"
+     * @param crawlHistory 关联的爬取历史记录
+     * @return 成功爬取并入库的所有新闻数据列表
+     * @throws IOException 当爬取入口页面失败时抛出
+     */
+    public List<NewsData> crawlNewsFromIndexPage(String indexUrl, CrawlHistory crawlHistory) throws IOException {
+        log.info("开始二级爬取任务，入口页面: {}", indexUrl);
+        List<NewsData> crawledNewsList = new ArrayList<>();
+
+        // 1. 爬取入口页面
+        Connection.Response response = Jsoup.connect(indexUrl)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(20000)
+                .execute();
+        Document indexDoc = response.parse();
+        URL baseUrl = response.url(); // 获取最终的URL，处理重定向
+
+        // 2. 提取并筛选所有符合条件的链接
+        Elements links = indexDoc.select("a[href]");
+        log.info("在入口页面找到 {} 个链接，开始筛选...", links.size());
+
+        Set<String> validUrlsToCrawl = new HashSet<>();
+        for (Element link : links) {
+            String absUrl = link.absUrl("href").trim();
+            // 清理URL，移除查询参数和哈希
+            int queryPos = absUrl.indexOf('?');
+            if (queryPos != -1) {
+                absUrl = absUrl.substring(0, queryPos);
+            }
+            int hashPos = absUrl.indexOf('#');
+            if(hashPos != -1) {
+                absUrl = absUrl.substring(0, hashPos);
+            }
+
+            if (isSinaNewsUrl(absUrl)) {
+                validUrlsToCrawl.add(absUrl);
+            }
+        }
+        
+        log.info("筛选出 {} 个有效的新闻详情页URL准备爬取。", validUrlsToCrawl.size());
+
+        // 3. 遍历有效链接，调用单页爬虫进行爬取
+        int count = 0;
+        int skippedCount = 0;
+        for (String urlToCrawl : validUrlsToCrawl) {
+            count++;
+            log.info("二级爬取进度: {}/{}, 正在处理URL: {}", count, validUrlsToCrawl.size(), urlToCrawl);
+            try {
+                // 调用带有crawlHistory参数的单页爬取和保存方法
+                Optional<NewsData> newsDataOpt = crawlAndSaveSinaNews(urlToCrawl, crawlHistory);
+                if (newsDataOpt.isPresent()) {
+                    crawledNewsList.add(newsDataOpt.get());
+                } else {
+                    skippedCount++;
+                    log.info("二级爬取过程中，URL {} 的内容提取失败，已跳过", urlToCrawl);
+                }
+                // 可以加个延时，防止请求过于频繁
+                Thread.sleep(500); // 暂停500毫秒
+            } catch (Exception e) {
+                log.error("二级爬取过程中，处理URL {} 失败: {}", urlToCrawl, e.getMessage());
+                // 某个页面失败不影响整体任务，继续下一个
+            }
+        }
+
+        log.info("二级爬取任务完成，共成功爬取并保存了 {} 条新闻，跳过了 {} 条内容提取失败的新闻。", crawledNewsList.size(), skippedCount);
+        return crawledNewsList;
+    }
+
     /**
      * 按关键词爬取新闻：从新浪新闻首页爬取所有标题包含关键词的新闻
      * <p>
@@ -213,13 +294,19 @@ public class NewsCrawlerService {
 
         // 3. 遍历有效链接，调用单页爬虫进行爬取
         int count = 0;
+        int skippedCount = 0;
         for (String urlToCrawl : validUrlsToCrawl) {
             count++;
             log.info("关键词爬取进度: {}/{}, 正在处理URL: {}", count, validUrlsToCrawl.size(), urlToCrawl);
             try {
                 // 调用现有的单页爬取和保存方法
-                NewsData newsData = crawlAndSaveSinaNews(urlToCrawl);
-                crawledNewsList.add(newsData);
+                Optional<NewsData> newsDataOpt = crawlAndSaveSinaNews(urlToCrawl);
+                if (newsDataOpt.isPresent()) {
+                    crawledNewsList.add(newsDataOpt.get());
+                } else {
+                    skippedCount++;
+                    log.info("关键词爬取过程中，URL {} 的内容提取失败，已跳过", urlToCrawl);
+                }
                 // 暂停，避免请求过于频繁
                 Thread.sleep(500);
             } catch (Exception e) {
@@ -227,7 +314,84 @@ public class NewsCrawlerService {
             }
         }
 
-        log.info("关键词 '{}' 爬取任务完成，共成功爬取并保存了 {} 条新闻。", keyword, crawledNewsList.size());
+        log.info("关键词 '{}' 爬取任务完成，共成功爬取并保存了 {} 条新闻，跳过了 {} 条内容提取失败的新闻。", keyword, crawledNewsList.size(), skippedCount);
+        return crawledNewsList;
+    }
+
+    /**
+     * 按关键词爬取新闻（关联到特定爬取历史）
+     * <p>
+     * 这是{@link #crawlNewsByKeyword(String, String)}的扩展版本，支持将爬取到的新闻与特定的爬取历史记录关联起来。
+     * </p>
+     *
+     * @param keyword 要搜索的关键词
+     * @param indexUrl 入口页面的URL，例如 "https://news.sina.com.cn/"
+     * @param crawlHistory 关联的爬取历史记录
+     * @return 成功爬取并入库的所有新闻数据列表
+     * @throws IOException 当爬取入口页面失败时抛出
+     */
+    public List<NewsData> crawlNewsByKeyword(String keyword, String indexUrl, CrawlHistory crawlHistory) throws IOException {
+        log.info("开始按关键词 '{}' 爬取任务，入口页面: {}", keyword, indexUrl);
+        List<NewsData> crawledNewsList = new ArrayList<>();
+
+        // 1. 爬取入口页面
+        Document indexDoc = Jsoup.connect(indexUrl)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(20000)
+                .get();
+
+        // 2. 提取并筛选所有符合条件的链接
+        Elements links = indexDoc.select("a[href]");
+        log.info("在入口页面找到 {} 个链接，开始根据关键词 '{}' 进行筛选...", links.size(), keyword);
+
+        Set<String> validUrlsToCrawl = new HashSet<>();
+        for (Element link : links) {
+            String linkTitle = link.text().trim();
+            // 筛选条件：链接文本必须包含关键词 (忽略大小写)
+            if (linkTitle.toLowerCase().contains(keyword.toLowerCase())) {
+                String absUrl = link.absUrl("href").trim();
+                // 清理URL
+                int queryPos = absUrl.indexOf('?');
+                if (queryPos != -1) {
+                    absUrl = absUrl.substring(0, queryPos);
+                }
+                int hashPos = absUrl.indexOf('#');
+                if(hashPos != -1) {
+                    absUrl = absUrl.substring(0, hashPos);
+                }
+
+                // 筛选条件：URL必须是有效的新浪新闻详情页
+                if (isSinaNewsUrl(absUrl)) {
+                    validUrlsToCrawl.add(absUrl);
+                }
+            }
+        }
+
+        log.info("筛选出 {} 个标题含关键词的有效新闻详情页URL准备爬取。", validUrlsToCrawl.size());
+
+        // 3. 遍历有效链接，调用单页爬虫进行爬取
+        int count = 0;
+        int skippedCount = 0;
+        for (String urlToCrawl : validUrlsToCrawl) {
+            count++;
+            log.info("关键词爬取进度: {}/{}, 正在处理URL: {}", count, validUrlsToCrawl.size(), urlToCrawl);
+            try {
+                // 调用带有crawlHistory参数的单页爬取和保存方法
+                Optional<NewsData> newsDataOpt = crawlAndSaveSinaNews(urlToCrawl, crawlHistory);
+                if (newsDataOpt.isPresent()) {
+                    crawledNewsList.add(newsDataOpt.get());
+                } else {
+                    skippedCount++;
+                    log.info("关键词爬取过程中，URL {} 的内容提取失败，已跳过", urlToCrawl);
+                }
+                // 暂停，避免请求过于频繁
+                Thread.sleep(500);
+            } catch (Exception e) {
+                log.error("关键词爬取过程中，处理URL {} 失败: {}", urlToCrawl, e.getMessage());
+            }
+        }
+
+        log.info("关键词 '{}' 爬取任务完成，共成功爬取并保存了 {} 条新闻，跳过了 {} 条内容提取失败的新闻。", keyword, crawledNewsList.size(), skippedCount);
         return crawledNewsList;
     }
 
@@ -253,19 +417,20 @@ public class NewsCrawlerService {
      * 该方法首先检查数据库中是否已存在该URL对应的新闻，如果存在则直接返回已有数据。
      * 否则，使用Jsoup获取页面内容，解析出标题、来源、发布时间、正文等信息，
      * 创建NewsData实体并保存到数据库。该方法已适配多种新浪新闻页面结构。
+     * 如果内容提取失败，则返回空的Optional，不保存到数据库。
      * </p>
      *
      * @param url 新闻链接
-     * @return 爬取并保存后的新闻数据实体
+     * @return 爬取并保存后的新闻数据实体的Optional，如果内容提取失败则为empty
      * @throws IOException 爬取失败时抛出
      */
     @Transactional
-    public NewsData crawlAndSaveSinaNews(String url) throws IOException {
+    public Optional<NewsData> crawlAndSaveSinaNews(String url) throws IOException {
         // 1. 检查数据库中是否已存在该URL
         Optional<NewsData> existingNews = newsDataRepository.findByUrl(url);
         if (existingNews.isPresent()) {
             log.info("新闻已存在于数据库，跳过爬取: {}", url);
-            return existingNews.get();
+            return existingNews;
         }
 
         // 2. 使用 Jsoup 连接并获取页面文档
@@ -294,6 +459,12 @@ public class NewsCrawlerService {
             content = articleContentElement.html();
         }
 
+        // 如果内容提取失败，则跳过该新闻，不保存到数据库
+        if ("内容提取失败".equals(content)) {
+            log.warn("新闻内容提取失败，跳过保存: {}", url);
+            return Optional.empty();
+        }
+
         String keywords = doc.select("meta[name=keywords]").attr("content");
 
         // 4. 创建 NewsData 实体
@@ -309,7 +480,85 @@ public class NewsCrawlerService {
 
         // 5. 保存到数据库
         log.info("新闻爬取成功，正在保存到数据库: {}", newsData.getTitle());
-        return newsDataRepository.save(newsData);
+        return Optional.of(newsDataRepository.save(newsData));
+    }
+
+    /**
+     * 爬取单个新浪新闻URL并存入数据库，关联到特定的爬取历史记录
+     * <p>
+     * 该方法是{@link #crawlAndSaveSinaNews(String)}的扩展版本，
+     * 支持将爬取到的新闻与特定的爬取历史记录关联起来。
+     * </p>
+     *
+     * @param url 新闻链接
+     * @param crawlHistory 关联的爬取历史记录
+     * @return 爬取并保存后的新闻数据实体的Optional，如果内容提取失败则为empty
+     * @throws IOException 爬取失败时抛出
+     */
+    @Transactional
+    public Optional<NewsData> crawlAndSaveSinaNews(String url, CrawlHistory crawlHistory) throws IOException {
+        // 1. 检查数据库中是否已存在该URL
+        Optional<NewsData> existingNews = newsDataRepository.findByUrl(url);
+        if (existingNews.isPresent()) {
+            log.info("新闻已存在于数据库，跳过爬取: {}", url);
+            // 如果新闻已存在但没有关联历史记录，则更新关联
+            NewsData newsData = existingNews.get();
+            if (crawlHistory != null && newsData.getCrawlHistory() == null) {
+                newsData.setCrawlHistory(crawlHistory);
+                return Optional.of(newsDataRepository.save(newsData));
+            }
+            return existingNews;
+        }
+
+        // 2. 使用 Jsoup 连接并获取页面文档
+        log.info("开始爬取新闻: {}", url);
+        Document doc = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(15000)
+                .get();
+
+        // 3. 解析页面元素
+        String title = getTextBySelectors(doc, TITLE_SELECTORS);
+        if (title.isEmpty()) {
+            // 如果主要选择器失败，尝试从 <title> 标签获取，并做一些清理
+            title = doc.title().replace("_新浪新闻", "").replace("_新浪网", "").trim();
+        }
+        
+        String source = getTextBySelectors(doc, SOURCE_SELECTORS, "未知来源");
+        String publishTimeStr = getTextBySelectors(doc, TIME_SELECTORS);
+
+        // 正文内容提取与清理
+        Element articleContentElement = getElementBySelectors(doc, CONTENT_SELECTORS);
+        String content = "内容提取失败";
+        if (articleContentElement != null) {
+            articleContentElement.select("p.show_author, .wap_special, .article-notice, div[id^=ad_], ins.sinaads").remove();
+            articleContentElement.select("img[black-list=y]").parents().remove();
+            content = articleContentElement.html();
+        }
+
+        // 如果内容提取失败，则跳过该新闻，不保存到数据库
+        if ("内容提取失败".equals(content)) {
+            log.warn("新闻内容提取失败，跳过保存: {}", url);
+            return Optional.empty();
+        }
+
+        String keywords = doc.select("meta[name=keywords]").attr("content");
+
+        // 4. 创建 NewsData 实体
+        NewsData newsData = new NewsData();
+        newsData.setUrl(url);
+        newsData.setTitle(title.isEmpty() ? "无标题" : title);
+        newsData.setSource(source);
+        newsData.setContent(content);
+        newsData.setKeywords(keywords);
+        newsData.setCrawlHistory(crawlHistory); // 设置关联的爬取历史记录
+
+        // 解析发布时间（包含备用方案）
+        parseAndSetPublishTime(newsData, doc, publishTimeStr);
+
+        // 5. 保存到数据库
+        log.info("新闻爬取成功，正在保存到数据库: {}", newsData.getTitle());
+        return Optional.of(newsDataRepository.save(newsData));
     }
 
     /**
@@ -419,5 +668,20 @@ public class NewsCrawlerService {
     public Optional<NewsData> findNewsByUrl(String url) {
         log.info("从数据库查询URL对应的新闻数据: {}", url);
         return newsDataRepository.findByUrl(url);
+    }
+
+    /**
+     * 根据爬取历史ID查找关联的新闻数据
+     * <p>
+     * 该方法从数据库中查询与指定爬取历史记录关联的所有新闻数据。
+     * 主要用于查看批量爬取结果的详细内容。
+     * </p>
+     * 
+     * @param historyId 爬取历史记录ID
+     * @return 关联的新闻数据列表
+     */
+    public List<NewsData> findNewsByCrawlHistoryId(Long historyId) {
+        log.info("查询爬取历史ID {} 关联的新闻数据", historyId);
+        return newsDataRepository.findByCrawlHistoryId(historyId);
     }
 }

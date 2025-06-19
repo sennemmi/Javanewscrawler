@@ -28,7 +28,7 @@ public class CrawlHistory {
     private String title;
 
     @Lob 
-    @Column(columnDefinition = "JSON") 
+    @Column(columnDefinition = "TEXT") 
     private String params;//存储复杂参数
 
     @Column(name = "crawl_time", nullable = false, updatable = false)

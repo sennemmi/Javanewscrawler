@@ -65,13 +65,22 @@ let currentExportFormat = 'pdf';
 // 当前爬取类型
 let currentCrawlType = 'single';
 
+// 分析按钮
+const analysisBtn = getEl('analysisBtn');
+
 // ----------------- UI 交互逻辑 -----------------
 
 // 视图切换
 const showView = (view) => {
     homeView.style.display = 'none';
     resultView.style.display = 'none';
-    view.style.display = view === resultView ? 'flex' : 'block';
+    view.style.display = 'block';
+    
+    // 如果切换到首页，重置按钮状态
+    if (view === homeView) {
+        exportBtn.style.display = 'flex';
+        analysisBtn.style.display = 'none';
+    }
 };
 
 // 侧边栏切换
@@ -102,7 +111,13 @@ const hideDialog = (dialog) => {
     overlay.classList.remove('active');
 };
 
-exportBtn.addEventListener('click', () => showDialog(saveDialog));
+exportBtn.addEventListener('click', () => {
+    if (!currentArticleData || !currentArticleData.url) {
+        alert('没有可导出的内容。请先成功爬取一篇文章。');
+        return;
+    }
+    showDialog(saveDialog);
+});
 closeSaveDialog.addEventListener('click', () => hideDialog(saveDialog));
 cancelExport.addEventListener('click', () => hideDialog(saveDialog));
 addFavoriteBtn.addEventListener('click', () => {
@@ -115,7 +130,9 @@ overlay.addEventListener('click', () => {
     hideDialog(saveDialog);
     hideDialog(favoriteDialog);
 });
-backBtn.addEventListener('click', () => showView(homeView));
+backBtn.addEventListener('click', () => {
+    showView(homeView);
+});
 
 // 爬取类型切换
 typeOptions.forEach(option => {
@@ -231,6 +248,11 @@ crawlBtn.addEventListener('click', async () => {
 // 显示单URL爬取的结果
 function displaySuccessResult(data) {
     currentArticleData = data; // 缓存数据用于导出
+    
+    // 显示导出按钮，隐藏分析按钮
+    exportBtn.style.display = 'flex';
+    analysisBtn.style.display = 'none';
+    
     const resultHtml = `
         <header class="article-header">
             <h1>${data.title || '无标题'}</h1>
@@ -243,6 +265,26 @@ function displaySuccessResult(data) {
         </header>
         <div class="article-body">
             ${data.content || '<p>无正文内容。</p>'}
+        </div>
+        <div class="article-actions">
+            <button class="btn btn-primary" onclick="showDialog(saveDialog)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                导出文档
+            </button>
+            ${data.crawlHistoryId ? `
+            <button class="btn btn-secondary" onclick="goToAnalysisPage(${data.crawlHistoryId})">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                    <path d="M18 20V10"></path>
+                    <path d="M12 20V4"></path>
+                    <path d="M6 20v-6"></path>
+                </svg>
+                数据分析
+            </button>
+            ` : ''}
         </div>
     `;
     articleWrapper.innerHTML = resultHtml;
@@ -262,27 +304,91 @@ function displayBatchCrawlResult(data, type) {
         info = `使用关键词 <strong>${data.keyword}</strong> 从 <strong>${data.entryUrl}</strong> 成功爬取了 <strong>${data.crawledCount}</strong> 条新闻`;
     }
     
-    // 构建结果HTML
-    const resultHtml = `
-        <div class="batch-result-summary">
-            <h2 class="batch-result-title">${title}</h2>
-            <div class="batch-result-info">${info}</div>
-            <div class="batch-result-tip">爬取结果已添加到历史记录，您可以通过侧边栏访问这些新闻</div>
-            
-            ${data.titles && data.titles.length > 0 ? `
-                <div class="batch-result-list">
-                    ${data.titles.map((title, index) => `
-                        <div class="batch-result-item">${index + 1}. ${title}</div>
-                    `).join('')}
-                </div>
-            ` : ''}
-        </div>
-        <div class="batch-result-actions">
-            <button class="btn btn-primary" onclick="showView(homeView)">返回首页继续爬取</button>
-        </div>
-    `;
-    
-    articleWrapper.innerHTML = resultHtml;
+    // 获取最新的历史记录ID
+    getLatestHistoryId().then(historyId => {
+        // 显示分析按钮，隐藏导出按钮
+        if (historyId) {
+            exportBtn.style.display = 'none';
+            analysisBtn.style.display = 'flex';
+            analysisBtn.onclick = () => goToAnalysisPage(historyId);
+        } else {
+            exportBtn.style.display = 'none';
+            analysisBtn.style.display = 'none';
+        }
+        
+        // 构建结果HTML
+        const resultHtml = `
+            <div class="batch-result-summary">
+                <h2 class="batch-result-title">${title}</h2>
+                <div class="batch-result-info">${info}</div>
+                <div class="batch-result-tip">爬取结果已添加到历史记录，您可以通过侧边栏访问这些新闻</div>
+                
+                ${data.titles && data.titles.length > 0 ? `
+                    <div class="batch-result-list">
+                        ${data.titles.map((title, index) => `
+                            <div class="batch-result-item">${index + 1}. ${title}</div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+            <div class="batch-result-actions">
+                <button class="btn btn-primary" onclick="showView(homeView)">返回首页继续爬取</button>
+            </div>
+        `;
+        
+        articleWrapper.innerHTML = resultHtml;
+    }).catch(error => {
+        console.error('获取历史ID失败:', error);
+        
+        // 隐藏导出和分析按钮
+        exportBtn.style.display = 'none';
+        analysisBtn.style.display = 'none';
+        
+        // 构建无历史ID的结果HTML
+        const resultHtml = `
+            <div class="batch-result-summary">
+                <h2 class="batch-result-title">${title}</h2>
+                <div class="batch-result-info">${info}</div>
+                <div class="batch-result-tip">爬取结果已添加到历史记录，您可以通过侧边栏访问这些新闻</div>
+                
+                ${data.titles && data.titles.length > 0 ? `
+                    <div class="batch-result-list">
+                        ${data.titles.map((title, index) => `
+                            <div class="batch-result-item">${index + 1}. ${title}</div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            </div>
+            <div class="batch-result-actions">
+                <button class="btn btn-primary" onclick="showView(homeView)">返回首页继续爬取</button>
+            </div>
+        `;
+        
+        articleWrapper.innerHTML = resultHtml;
+    });
+}
+
+// 获取最新的历史记录ID
+async function getLatestHistoryId() {
+    try {
+        const response = await fetch('/api/history');
+        if (response.ok) {
+            const historyData = await response.json();
+            if (historyData && historyData.length > 0) {
+                // 返回最新的历史记录ID（第一条记录）
+                return historyData[0].id;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('获取历史记录失败:', error);
+        return null;
+    }
+}
+
+// 跳转到数据分析页面，并传递历史ID参数
+function goToAnalysisPage(historyId) {
+    window.location.href = `analysis.html?historyId=${historyId}`;
 }
 
 function displayErrorResult(message) {
@@ -439,37 +545,93 @@ function updateHistoryDisplay(history) {
         historyList.innerHTML = '<li style="padding: 10px; color: var(--text-color-secondary);">暂无历史记录</li>';
         return;
     }
-    historyList.innerHTML = history.map(item => `
+    historyList.innerHTML = history.map(item => {
+        // 确保URL是原始URL，不要再额外编码
+        const url = item.url || '';
+        
+        // 判断是否为批量爬取（二级爬取或关键词爬取）
+        let isBatchCrawl = item.crawlType === 'INDEX_CRAWL' || item.crawlType === 'KEYWORD_CRAWL';
+        
+        // 尝试解析params字段
+        let params = null;
+        if (item.params) {
+            try {
+                params = JSON.parse(item.params);
+            } catch (e) {
+                console.error('解析params失败:', e);
+            }
+        }
+        
+        // 如果是INDEX_CRAWL类型且params中包含totalCount，则认为是批量爬取
+        if (item.crawlType === 'INDEX_CRAWL' && params && params.totalCount) {
+            isBatchCrawl = true;
+        }
+        
+        // 根据是否为批量爬取决定点击事件
+        const clickHandler = isBatchCrawl 
+            ? `onclick="loadNewsByHistoryId(${item.id}, event)"` 
+            : `onclick="loadHistoryItem('${url}')"`;
+        
+        return `
         <li class="history-item" data-id="${item.id}">
-            <div class="history-content" onclick="loadHistoryItem('${item.url}')">
+            <div class="history-content" ${clickHandler}>
                 <span class="title">${item.title}</span>
                 <span class="time">${new Date(item.crawlTime).toLocaleString()}</span>
             </div>
-            <div class="delete-btn" onclick="deleteHistoryItem(${item.id}, event)">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <div class="history-actions">
+                ${isBatchCrawl ? `
+                <div class="view-news-btn" onclick="loadNewsByHistoryId(${item.id}, event)" title="查看关联新闻">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <div class="view-news-btn" onclick="goToAnalysisPage(${item.id})" title="数据分析">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"></path>
+                        <path d="M12 20V4"></path>
+                        <path d="M6 20v-6"></path>
+                    </svg>
+                </div>
+                ` : ''}
+                <div class="delete-btn" onclick="deleteHistoryItem(${item.id}, event)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </div>
             </div>
-        </li>`).join('');
+        </li>`;
+    }).join('');
 }
 
 async function loadHistoryItem(url) {
-    urlInput.value = url;
+    // 检查URL是否为空
+    if (!url || url === 'undefined' || url === 'null') {
+        showView(resultView);
+        displayErrorResult('该历史记录没有关联的URL，可能是批量爬取记录。请使用"查看关联新闻"按钮查看详情。');
+        return;
+    }
+    
     showView(resultView);
     articleWrapper.innerHTML = '<div class="loading-container"><span><div class="loading"></div>正在获取历史记录...</span></div>';
     
     try {
-        const response = await fetch(`/api/news/detail?url=${encodeURIComponent(url)}`);
+        // 确保URL安全编码，处理可能的双重编码问题
+        const safeUrl = encodeURIComponent(decodeURIComponent(url));
+        // 使用/api/news/detail接口获取已爬取的新闻数据
+        const response = await fetch(`/api/news/detail?url=${safeUrl}`);
         if (response.ok) {
             const newsData = await response.json();
             displaySuccessResult(newsData);
         } else if (response.status === 404) {
-            console.log('历史记录中没有详细数据，尝试重新爬取');
-            await crawlBtn.click();
+            displayErrorResult('无法获取历史记录详情，该新闻可能已被删除或URL格式不正确');
         } else {
-            displayErrorResult('无法获取历史记录详情，请尝试重新爬取');
+            displayErrorResult(`获取历史记录失败：${response.status} ${response.statusText}`);
         }
     } catch (error) {
         console.error('获取历史记录详情错误:', error);
-        displayErrorResult('获取历史记录详情时发生错误');
+        displayErrorResult('获取历史记录详情时发生错误：' + error.message);
     }
 }
 
@@ -588,3 +750,97 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInputForCrawlType();
     showView(homeView); // 初始显示主页
 });
+
+async function loadNewsByHistoryId(historyId, event) {
+    if (event) event.stopPropagation();
+    
+    // 如果historyId为null，显示错误信息并返回
+    if (historyId === null || historyId === 'null') {
+        displayErrorResult('无法获取关联的爬取历史ID');
+        return;
+    }
+    
+    showView(resultView);
+    articleWrapper.innerHTML = '<div class="loading-container"><span><div class="loading"></div>正在获取关联新闻数据...</span></div>';
+    
+    try {
+        const response = await fetch(`/api/history/${historyId}/news`);
+        if (response.ok) {
+            const newsDataList = await response.json();
+            
+            if (newsDataList && newsDataList.length > 0) {
+                // 显示批量新闻列表
+                const resultHtml = `
+                    <div class="batch-result-summary">
+                        <h2 class="batch-result-title">爬取历史关联新闻</h2>
+                        <div class="batch-result-info">共找到 <strong>${newsDataList.length}</strong> 条关联新闻</div>
+                    </div>
+                    <div class="news-list">
+                        ${newsDataList.map((news, index) => `
+                            <div class="news-item" onclick="displayNewsDetail(${JSON.stringify(news).replace(/"/g, '&quot;')})">
+                                <div class="news-number">${index + 1}</div>
+                                <div class="news-content">
+                                    <h3 class="news-title">${news.title || '无标题'}</h3>
+                                    <div class="news-meta">
+                                        ${news.source ? `<span class="news-source">${news.source}</span>` : ''}
+                                        ${news.publishTime ? `<span class="news-time">${new Date(news.publishTime).toLocaleString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                articleWrapper.innerHTML = resultHtml;
+            } else {
+                displayErrorResult('该爬取历史没有关联的新闻数据');
+            }
+        } else if (response.status === 404) {
+            displayErrorResult('未找到该爬取历史记录');
+        } else {
+            displayErrorResult(`获取关联新闻失败：${response.status} ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('获取关联新闻错误:', error);
+        displayErrorResult('获取关联新闻时发生错误：' + error.message);
+    }
+}
+
+function displayNewsDetail(newsData) {
+    currentArticleData = newsData; // 缓存数据用于导出
+    const resultHtml = `
+        <header class="article-header">
+            <h1>${newsData.title || '无标题'}</h1>
+            <div class="article-meta">
+                ${newsData.source ? `<div class="meta-item"><strong>来源:</strong> <span>${newsData.source}</span></div>` : ''}
+                ${newsData.author ? `<div class="meta-item"><strong>作者:</strong> <span>${newsData.author}</span></div>` : ''}
+                ${newsData.publishTime ? `<div class="meta-item"><strong>发布时间:</strong> <span>${new Date(newsData.publishTime).toLocaleString()}</span></div>` : ''}
+                ${newsData.keywords ? `<div class="meta-item"><strong>关键词:</strong> <span>${newsData.keywords}</span></div>` : ''}
+            </div>
+        </header>
+        <div class="article-body">
+            ${newsData.content || '<p>无正文内容。</p>'}
+        </div>
+        <div class="article-actions">
+            <button class="btn btn-secondary" onclick="loadNewsByHistoryId(${newsData.crawlHistoryId || 'null'})">返回列表</button>
+            <button class="btn btn-primary" onclick="showDialog(saveDialog)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                导出文档
+            </button>
+            ${newsData.crawlHistoryId ? `
+            <button class="btn btn-secondary" onclick="goToAnalysisPage(${newsData.crawlHistoryId})">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;">
+                    <path d="M18 20V10"></path>
+                    <path d="M12 20V4"></path>
+                    <path d="M6 20v-6"></path>
+                </svg>
+                数据分析
+            </button>
+            ` : ''}
+        </div>
+    `;
+    articleWrapper.innerHTML = resultHtml;
+}

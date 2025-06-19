@@ -1,5 +1,6 @@
 package com.hhu.javawebcrawler.demo.controller;
 
+import com.hhu.javawebcrawler.demo.entity.CrawlHistory;
 import com.hhu.javawebcrawler.demo.entity.NewsData;
 import com.hhu.javawebcrawler.demo.entity.User;
 import com.hhu.javawebcrawler.demo.service.CrawlHistoryService;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * 文件导出控制器
@@ -60,7 +62,6 @@ public class ExportController {
      * @param h3FontSize (可选)覆盖三级标题字体大小，默认为textFontSize+2
      * @param captionFontSize (可选)覆盖图片注释和元数据字体大小，默认为max(textFontSize-2, 10)
      * @param footerFontSize (可选)覆盖页脚字体大小，默认为max(textFontSize-4, 8)
-     * @param skipHistoryRecord (可选)是否跳过记录导出历史，默认为false。设置为true时，导出操作不会被记录到历史记录中
      * @return 文件下载流，附带适当的Content-Type和Content-Disposition头
      */
     @GetMapping("/export")
@@ -74,8 +75,7 @@ public class ExportController {
             @RequestParam(required = false) Integer h2FontSize,
             @RequestParam(required = false) Integer h3FontSize,
             @RequestParam(required = false) Integer captionFontSize,
-            @RequestParam(required = false) Integer footerFontSize,
-            @RequestParam(required = false, defaultValue = "false") Boolean skipHistoryRecord
+            @RequestParam(required = false) Integer footerFontSize
     ) {
         logger.info("收到文件导出请求: URL={}, 格式={}, 文本大小={}, 行间距={}", url, format, textFontSize, lineSpacing);
         
@@ -97,8 +97,31 @@ public class ExportController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
             }
 
+            // 获取用户ID
+            String username = authentication.getName();
+            User user = userService.findByUsername(username);
+            Long userId = user.getId();
+
+            // 创建爬取历史记录
+            CrawlHistory crawlHistory = new CrawlHistory();
+            crawlHistory.setUserId(userId);
+            crawlHistory.setCrawlType("SINGLE_URL");
+            crawlHistory.setUrl(url);
+            crawlHistory.setTitle("导出文件: " + url);
+            crawlHistory = crawlHistoryService.saveHistory(crawlHistory);
+            
             // 爬取或获取已有的新闻数据
-            NewsData newsData = newsCrawlerService.crawlAndSaveSinaNews(url);
+            Optional<NewsData> newsDataOpt;
+            newsDataOpt = newsCrawlerService.crawlAndSaveSinaNews(url, crawlHistory);
+            
+            if (!newsDataOpt.isPresent()) {
+                // 如果内容提取失败，更新历史记录
+                crawlHistory.setTitle("导出失败: 内容提取失败");
+                crawlHistoryService.saveHistory(crawlHistory);
+                logger.warn("未能获取新闻数据: {}", url);
+                return ResponseEntity.badRequest().body("未能获取新闻数据".getBytes());
+            }
+            NewsData newsData = newsDataOpt.get();
             logger.debug("成功获取新闻数据: {}", newsData.getTitle());
 
             // 计算字体大小
@@ -149,17 +172,13 @@ public class ExportController {
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
             headers.setContentLength(fileContent.length);
 
-            // 只有当skipHistoryRecord为false时才记录导出历史
-            if (!skipHistoryRecord) {
-                String formatInfo = String.format("%s (正文:%d,行距:%.1f)",
-                        format.toUpperCase(), textFontSize, lineSpacing);
-                String username = authentication.getName();
-                User user = userService.findByUsername(username);
-                crawlHistoryService.recordSingleUrlCrawl(user.getId(), url, "导出为" + formatInfo + ": " + newsData.getTitle());
-                logger.debug("已记录导出历史");
-            } else {
-                logger.debug("跳过记录导出历史");
-            }
+            // 更新爬取历史记录的标题
+            String formatInfo = String.format("%s (正文:%d,行距:%.1f)",
+                    format.toUpperCase(), textFontSize, lineSpacing);
+            crawlHistory.setTitle("导出为" + formatInfo + ": " + newsData.getTitle());
+            crawlHistoryService.saveHistory(crawlHistory);
+            
+            logger.debug("已记录导出历史");
             
             logger.info("成功导出文件: {}, 大小: {} 字节", encodedFileName + fileExtension, fileContent.length);
             return new ResponseEntity<>(fileContent, headers, HttpStatus.OK);
