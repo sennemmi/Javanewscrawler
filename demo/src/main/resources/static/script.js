@@ -388,7 +388,13 @@ async function getLatestHistoryId() {
 
 // 跳转到数据分析页面，并传递历史ID参数
 function goToAnalysisPage(historyId) {
-    window.location.href = `analysis.html?historyId=${historyId}`;
+    // 不再跳转到单独的页面，而是在当前页面显示数据分析视图
+    if (window.dataAnalysis && typeof window.dataAnalysis.startAnalysis === 'function') {
+        window.dataAnalysis.startAnalysis(historyId);
+    } else {
+        console.error('数据分析功能未加载');
+        alert('数据分析功能暂时不可用');
+    }
 }
 
 function displayErrorResult(message) {
@@ -844,3 +850,126 @@ function displayNewsDetail(newsData) {
     `;
     articleWrapper.innerHTML = resultHtml;
 }
+
+/**
+ * 导出文档
+ * @param {Object} params 导出参数
+ */
+function exportDocument(params) {
+    const overlay = document.getElementById('overlay');
+    const saveDialog = document.getElementById('saveDialog');
+    
+    // 显示加载状态
+    const loadingElement = document.createElement('div');
+    loadingElement.className = 'loading-overlay';
+    loadingElement.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在生成文档，请稍候...</div>
+    `;
+    document.body.appendChild(loadingElement);
+    
+    // 关闭导出对话框
+    if (saveDialog && overlay) {
+        saveDialog.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+    
+    // 发送导出请求
+    fetch('/api/export', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+    })
+    .then(response => {
+        // 移除加载状态
+        document.body.removeChild(loadingElement);
+        
+        if (response.ok) {
+            // 检查Content-Type
+            const contentType = response.headers.get('Content-Type');
+            if (contentType && (contentType.includes('application/pdf') || contentType.includes('application/vnd.openxmlformats-officedocument.wordprocessingml.document'))) {
+                // 是文件下载
+                return response.blob().then(blob => {
+                    // 创建下载链接
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    
+                    // 设置文件名
+                    const filename = response.headers.get('Content-Disposition')
+                        ? response.headers.get('Content-Disposition').split('filename=')[1].replace(/"/g, '')
+                        : params.format === 'pdf' ? '导出文档.pdf' : '导出文档.docx';
+                    
+                    a.download = decodeURIComponent(filename);
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // 清理
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                });
+            } else {
+                // 是JSON响应
+                return response.json().then(data => {
+                    if (data.error) {
+                        alert('导出失败: ' + data.error);
+                    } else if (data.message) {
+                        alert(data.message);
+                    } else {
+                        alert('导出成功');
+                    }
+                });
+            }
+        } else {
+            // 处理错误响应
+            return response.text().then(text => {
+                alert('导出失败: ' + text);
+            });
+        }
+    })
+    .catch(error => {
+        // 移除加载状态
+        if (document.body.contains(loadingElement)) {
+            document.body.removeChild(loadingElement);
+        }
+        console.error('导出错误:', error);
+        alert('导出过程中发生错误: ' + error.message);
+    });
+}
+
+// 初始化字体预览功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 字体选择预览功能
+    const fontFamilySelect = document.getElementById('fontFamily');
+    if (fontFamilySelect) {
+        // 创建预览元素
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'font-preview-container';
+        previewContainer.innerHTML = `
+            <div class="font-preview-label">预览:</div>
+            <div class="font-preview-text">这是字体预览文本 - 网页爬虫系统</div>
+        `;
+        
+        // 将预览元素插入到字体选择下拉框后面
+        fontFamilySelect.parentNode.appendChild(previewContainer);
+        
+        // 获取预览文本元素
+        const previewText = previewContainer.querySelector('.font-preview-text');
+        
+        // 初始化预览
+        if (previewText) {
+            previewText.style.fontFamily = fontFamilySelect.value;
+        }
+        
+        // 监听字体选择变化
+        fontFamilySelect.addEventListener('change', function() {
+            if (previewText) {
+                previewText.style.fontFamily = this.value;
+                console.log('字体已更改为:', this.value);
+            }
+        });
+    }
+});

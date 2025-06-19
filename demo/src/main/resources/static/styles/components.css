@@ -115,13 +115,28 @@
 .dialog-input:focus { outline: none; border-color: var(--active-color); }
 .dialog-footer { display: flex; justify-content: flex-end; gap: 12px; }
 .dialog-btn {
-    padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;
-    font-size: 14px; font-weight: 500; transition: all 0.2s;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
 }
-.dialog-btn.cancel { background: var(--hover-bg); color: var(--text-color); }
-.dialog-btn.cancel:hover { background: var(--border-color); }
-.dialog-btn.save { background: var(--active-color); color: #ffffff; }
-.dialog-btn.save:hover { opacity: 0.85; }
+.dialog-btn.cancel {
+    background: var(--hover-bg);
+    color: var(--text-color);
+}
+.dialog-btn.save {
+    background: var(--active-color);
+    color: #ffffff;
+}
+.dialog-btn.cancel:hover {
+    background: var(--border-color);
+}
+.dialog-btn.save:hover {
+    opacity: 0.85;
+}
 
 /* 侧边栏导航和列表 */
 .logo { font-size: 20px; font-weight: 600; color: var(--active-color); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
@@ -198,6 +213,17 @@
     font-weight: 500;
     color: var(--text-color);
     font-size: 14px;
+}
+
+/* 亮色主题下增强文字对比度 */
+:root[data-theme="light"] .form-group label {
+    color: #1a202c; /* 更深的文字颜色 */
+    font-weight: 600;
+}
+
+:root[data-theme="light"] .settings-heading {
+    color: #1a202c;
+    font-weight: 600;
 }
 
 /* 下拉选择框样式 */
@@ -367,44 +393,90 @@
 }
 
 .dialog-btn {
-    padding: 8px 15px;
+    padding: 8px 16px;
+    border-radius: 6px;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .dialog-btn.cancel {
-    background-color: var(--bg-light);
-    color: var(--text-primary);
+    background: var(--hover-bg);
+    color: var(--text-color);
+}
+
+/* 亮色主题下增强取消按钮对比度 */
+:root[data-theme="light"] .dialog-btn.cancel {
+    background: #e2e8f0;
+    color: #1a202c;
+    border: 1px solid #cbd5e1;
 }
 
 .dialog-btn.save {
-    background-color: var(--primary);
-    color: white;
+    background: var(--active-color);
+    color: #ffffff;
+}
+
+/* 亮色主题下增强保存按钮对比度 */
+:root[data-theme="light"] .dialog-btn.save {
+    background: #2563eb; /* 更深的蓝色 */
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
 .dialog-btn.cancel:hover {
-    background-color: var(--bg-lighter);
+    background: var(--border-color);
+}
+
+:root[data-theme="light"] .dialog-btn.cancel:hover {
+    background: #cbd5e1;
 }
 
 .dialog-btn.save:hover {
-    background-color: var(--primary-dark);
+    opacity: 0.85;
+}
+
+:root[data-theme="light"] .dialog-btn.save:hover {
+    background: #1d4ed8; /* 悬停时更深的蓝色 */
+    opacity: 1;
+}
+
+/* 导出对话框内容区域 */
+.export-dialog-content {
+    max-height: calc(90vh - 150px);
+    overflow-y: auto;
+    margin-bottom: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+/* 亮色主题下增强导出选项对比度 */
+:root[data-theme="light"] .export-format-options .save-option {
+    border: 1px solid #cbd5e1;
+}
+
+:root[data-theme="light"] .export-format-options .save-option.active {
+    background: #dbeafe;
+    border-color: #2563eb;
+}
+
+:root[data-theme="light"] .export-format-options .save-option.active .save-option-title {
+    color: #1e40af;
+    font-weight: 600;
+}
+
+:root[data-theme="light"] .export-format-options .save-option svg {
+    color: #64748b;
+}
+
+:root[data-theme="light"] .export-format-options .save-option.active svg {
+    color: #2563eb;
 }
 
 /* 导出表单左右布局 */
-.export-dialog-content {
-    overflow-y: auto;
-    max-height: calc(90vh - 140px);
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-}
-
-.export-dialog-content::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
-
 .export-form-container {
     display: flex;
     flex-direction: row;
@@ -499,4 +571,71 @@
     margin-top: 20px;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+/* 字体预览样式 */
+.font-preview-container {
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+}
+
+.font-preview-label {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    margin-bottom: 8px;
+}
+
+.font-preview-text {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-color);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* 亮色主题下增强预览文本对比度 */
+:root[data-theme="light"] .font-preview-text {
+    color: #1a202c;
+}
+
+/* 加载动画样式 */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    color: white;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.loading-text {
+    font-size: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }

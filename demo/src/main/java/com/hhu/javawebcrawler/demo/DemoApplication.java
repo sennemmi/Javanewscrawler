@@ -2,7 +2,6 @@ package com.hhu.javawebcrawler.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.slf4j.Logger;
@@ -12,7 +11,6 @@ import org.springframework.lang.NonNull;
 import java.io.File;
 
 @SpringBootApplication
-@EnableScheduling
 public class DemoApplication implements WebMvcConfigurer {
 
 	private static final Logger logger = LoggerFactory.getLogger(DemoApplication.class);

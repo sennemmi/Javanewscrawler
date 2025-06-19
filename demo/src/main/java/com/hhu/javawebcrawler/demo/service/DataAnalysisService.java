@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -205,7 +204,7 @@ public class DataAnalysisService {
      * 获取关键词时间趋势数据
      *
      * @param keyword 要分析的关键词
-     * @param timeUnit 时间单位 (day, week, month)
+     * @param timeUnit 时间单位 (hour6, hour12, day)
      * @param historyId 爬取历史ID (必填)
      * @return 时间趋势数据，按时间点分组的关键词出现次数
      */
@@ -227,28 +226,49 @@ public class DataAnalysisService {
         
         // 根据时间单位选择不同的时间格式
         String timeFormat;
+        String sql;
+        
         switch (timeUnit.toLowerCase()) {
-            case "week":
-                timeFormat = "%Y-%u"; // ISO周格式 (年-周数)
+            case "hour6":
+                // 6小时为一个时间单位
+                timeFormat = "%Y-%m-%d %H";
+                sql = "SELECT CONCAT(DATE_FORMAT(publish_time, '%Y-%m-%d '), FLOOR(HOUR(publish_time)/6)*6) as time_point, COUNT(*) as count " +
+                      "FROM t_news_data" + whereClause + 
+                      " GROUP BY time_point ORDER BY MIN(publish_time)";
                 break;
-            case "month":
-                timeFormat = "%Y-%m"; // 年-月格式
+            case "hour12":
+                // 12小时为一个时间单位
+                timeFormat = "%Y-%m-%d %H";
+                sql = "SELECT CONCAT(DATE_FORMAT(publish_time, '%Y-%m-%d '), FLOOR(HOUR(publish_time)/12)*12) as time_point, COUNT(*) as count " +
+                      "FROM t_news_data" + whereClause + 
+                      " GROUP BY time_point ORDER BY MIN(publish_time)";
                 break;
             case "day":
             default:
-                timeFormat = "%Y-%m-%d"; // 年-月-日格式
+                // 日为一个时间单位
+                timeFormat = "%Y-%m-%d";
+                sql = "SELECT DATE_FORMAT(publish_time, ?) as time_point, COUNT(*) as count " +
+                      "FROM t_news_data" + whereClause + 
+                      " GROUP BY time_point ORDER BY MIN(publish_time)";
+                params.add(0, timeFormat);
                 break;
         }
         
-        // 查询按时间分组的关键词出现次数 - 修改表名为t_news_data
-        String sql = "SELECT DATE_FORMAT(publish_time, ?) as time_point, COUNT(*) as count " +
-                     "FROM t_news_data" + whereClause + 
-                     " GROUP BY time_point ORDER BY MIN(publish_time)";
-        
-        params.add(0, timeFormat);
         logger.debug("执行SQL: {}", sql);
         
-        List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, params.toArray()).stream()
+        List<Map<String, Object>> result;
+        
+        if (timeUnit.equals("hour6") || timeUnit.equals("hour12")) {
+            result = jdbcTemplate.queryForList(sql, params.toArray()).stream()
+                    .map(row -> {
+                        Map<String, Object> point = new HashMap<>();
+                        point.put("timePoint", row.get("time_point"));
+                        point.put("count", row.get("count"));
+                        return point;
+                    })
+                    .collect(Collectors.toList());
+        } else {
+            result = jdbcTemplate.queryForList(sql, params.toArray()).stream()
                 .map(row -> {
                     Map<String, Object> point = new HashMap<>();
                     point.put("timePoint", row.get("time_point"));
@@ -256,6 +276,7 @@ public class DataAnalysisService {
                     return point;
                 })
                 .collect(Collectors.toList());
+        }
         
         logger.debug("返回时间趋势数据 {} 条", result.size());
         return result;

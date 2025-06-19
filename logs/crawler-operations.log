@@ -2187,3 +2187,81 @@
 2025-06-19 13:38:41.863 INFO  [http-nio-0.0.0.0-8080-exec-8] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
 2025-06-19 14:19:05.120 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
 2025-06-19 14:22:44.321 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 16:36:52.135 INFO  [http-nio-0.0.0.0-8080-exec-10] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:04:17.507 INFO  [http-nio-0.0.0.0-8080-exec-9] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:04:50.974 INFO  [http-nio-0.0.0.0-8080-exec-2] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:05:09.858 INFO  [http-nio-0.0.0.0-8080-exec-8] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:17:47.577 INFO  [http-nio-0.0.0.0-8080-exec-7] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:17:57.282 INFO  [http-nio-0.0.0.0-8080-exec-2] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 17:26:50.137 INFO  [http-nio-0.0.0.0-8080-exec-4] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infamvkn1464755.shtml
+2025-06-19 17:27:34.033 INFO  [http-nio-0.0.0.0-8080-exec-9] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:16:34.039 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:32:49.958 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:45:35.776 INFO  [http-nio-0.0.0.0-8080-exec-8] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:45:46.011 INFO  [http-nio-0.0.0.0-8080-exec-4] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:46:09.915 INFO  [http-nio-0.0.0.0-8080-exec-10] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-17/doc-infakazm6726571.shtml
+2025-06-19 18:56:26.572 INFO  [http-nio-0.0.0.0-8080-exec-4] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-17/doc-infakazm6726571.shtml
+2025-06-19 18:56:30.516 INFO  [http-nio-0.0.0.0-8080-exec-10] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 18:56:38.955 INFO  [http-nio-0.0.0.0-8080-exec-8] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:56:46.828 INFO  [http-nio-0.0.0.0-8080-exec-6] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:56:52.803 INFO  [http-nio-0.0.0.0-8080-exec-1] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:56:59.546 INFO  [http-nio-0.0.0.0-8080-exec-9] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:58:26.930 INFO  [http-nio-0.0.0.0-8080-exec-6] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:58:27.717 INFO  [http-nio-0.0.0.0-8080-exec-4] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:58:28.249 INFO  [http-nio-0.0.0.0-8080-exec-9] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:58:28.900 INFO  [http-nio-0.0.0.0-8080-exec-7] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 18:58:29.549 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 19:05:05.530 INFO  [http-nio-0.0.0.0-8080-exec-6] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 19:05:38.891 INFO  [http-nio-0.0.0.0-8080-exec-1] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 19:05:54.104 INFO  [http-nio-0.0.0.0-8080-exec-2] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infannhn8317525.shtml
+2025-06-19 19:14:43.173 INFO  [http-nio-0.0.0.0-8080-exec-7] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 19:25:27.127 INFO  [http-nio-0.0.0.0-8080-exec-1] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infamvkn1464755.shtml
+2025-06-19 19:28:13.152 INFO  [http-nio-0.0.0.0-8080-exec-10] c.h.javawebcrawler.demo.service.NewsCrawlerService - 查询爬取历史ID 119 关联的新闻数据
+2025-06-19 19:28:51.027 INFO  [http-nio-0.0.0.0-8080-exec-3] c.h.javawebcrawler.demo.service.NewsCrawlerService - 从数据库查询URL对应的新闻数据: https://news.sina.com.cn/c/2025-06-18/doc-infamvkn1464755.shtml
+2025-06-19 19:29:08.199 INFO  [http-nio-0.0.0.0-8080-exec-4] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infamvkn1464755.shtml
+2025-06-19 19:29:15.596 INFO  [http-nio-0.0.0.0-8080-exec-2] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infamvkn1464755.shtml
+2025-06-19 19:35:26.540 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始按关键词 '伊朗' 爬取任务，入口页面: https://news.sina.com.cn/
+2025-06-19 19:35:27.008 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 在入口页面找到 974 个链接，开始根据关键词 '伊朗' 进行筛选...
+2025-06-19 19:35:27.028 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 筛选出 15 个标题含关键词的有效新闻详情页URL准备爬取。
+2025-06-19 19:35:27.030 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 1/15, 正在处理URL: https://k.sina.com.cn/article_5625245150_14f4a6dde00100zycq.html
+2025-06-19 19:35:27.064 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://k.sina.com.cn/article_5625245150_14f4a6dde00100zycq.html
+2025-06-19 19:35:27.569 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 2/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpq1789257.shtml
+2025-06-19 19:35:27.583 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpq1789257.shtml
+2025-06-19 19:35:27.978 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 伊朗袭击致以色列一医院严重受损
+2025-06-19 19:35:28.494 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 3/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqzvn1755888.shtml
+2025-06-19 19:35:28.501 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqzvn1755888.shtml
+2025-06-19 19:35:28.690 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 国际原子能机构确认伊朗洪达卜重水反应堆遭袭
+2025-06-19 19:35:29.206 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 4/15, 正在处理URL: https://news.sina.com.cn/c/2025-06-18/doc-infapccx8752741.shtml
+2025-06-19 19:35:29.210 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infapccx8752741.shtml
+2025-06-19 19:35:29.721 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 5/15, 正在处理URL: https://news.sina.com.cn/c/2025-06-18/doc-infansqf5676950.shtml
+2025-06-19 19:35:29.725 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://news.sina.com.cn/c/2025-06-18/doc-infansqf5676950.shtml
+2025-06-19 19:35:30.233 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 6/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpk7295979.shtml
+2025-06-19 19:35:30.237 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpk7295979.shtml
+2025-06-19 19:35:30.514 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 美官员：为防伊朗攻击，美军部分舰机已撤出中东基地
+2025-06-19 19:35:31.028 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 7/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqrfs1914413.shtml
+2025-06-19 19:35:31.033 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqrfs1914413.shtml
+2025-06-19 19:35:31.269 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 伊朗导弹再次击中特拉维夫
+2025-06-19 19:35:31.779 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 8/15, 正在处理URL: https://k.sina.com.cn/article_6723451236_190bfb9640010187lc.html
+2025-06-19 19:35:31.787 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻已存在于数据库，跳过爬取: https://k.sina.com.cn/article_6723451236_190bfb9640010187lc.html
+2025-06-19 19:35:32.295 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 9/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpk7278989.shtml
+2025-06-19 19:35:32.300 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqvpk7278989.shtml
+2025-06-19 19:35:32.439 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 以军袭击伊朗核反应堆和核武器基地
+2025-06-19 19:35:32.951 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 10/15, 正在处理URL: https://k.sina.com.cn/article_6723451236_190bfb9640010187r6.html
+2025-06-19 19:35:32.956 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://k.sina.com.cn/article_6723451236_190bfb9640010187r6.html
+2025-06-19 19:35:33.213 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 前主编Global丨外媒：美国若攻击伊朗，将会打开中东潘多拉魔盒
+2025-06-19 19:35:33.725 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 11/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqzvn1722573.shtml
+2025-06-19 19:35:33.729 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqzvn1722573.shtml
+2025-06-19 19:35:33.825 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 哈梅内伊任命伊朗革命卫队新任陆军总司令
+2025-06-19 19:35:34.336 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 12/15, 正在处理URL: https://k.sina.com.cn/article_1887344341_707e96d504001mtba.html
+2025-06-19 19:35:34.346 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://k.sina.com.cn/article_1887344341_707e96d504001mtba.html
+2025-06-19 19:35:34.538 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 以军警告伊朗核设施附近居民撤离，阿拉克洪达卜两地受威胁
+2025-06-19 19:35:35.047 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 13/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infarhck1655586.shtml
+2025-06-19 19:35:35.053 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infarhck1655586.shtml
+2025-06-19 19:35:35.514 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 以色列希望美国参与袭击伊朗福尔多核设施
+2025-06-19 19:35:36.039 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 14/15, 正在处理URL: https://k.sina.com.cn/article_2018499075_784fda0302002e6kc.html
+2025-06-19 19:35:36.044 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://k.sina.com.cn/article_2018499075_784fda0302002e6kc.html
+2025-06-19 19:35:36.225 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 维阿：去白宫感觉有点奇怪，特朗普聊伊朗局势时我只想专心踢球
+2025-06-19 19:35:36.751 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词爬取进度: 15/15, 正在处理URL: https://news.sina.com.cn/w/2025-06-19/doc-infaqrfn7384880.shtml
+2025-06-19 19:35:36.757 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 开始爬取新闻: https://news.sina.com.cn/w/2025-06-19/doc-infaqrfn7384880.shtml
+2025-06-19 19:35:36.947 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 新闻爬取成功，正在保存到数据库: 以军称伊朗向以色列发射导弹 以境内响起防空警报
+2025-06-19 19:35:37.467 INFO  [http-nio-0.0.0.0-8080-exec-5] c.h.javawebcrawler.demo.service.NewsCrawlerService - 关键词 '伊朗' 爬取任务完成，共成功爬取并保存了 15 条新闻，跳过了 0 条内容提取失败的新闻。

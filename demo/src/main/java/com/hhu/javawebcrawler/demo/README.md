@@ -8,7 +8,6 @@
 2. 批量新闻爬取（二级爬取和关键词爬取）
 3. 新闻导出（Word和PDF格式）
 4. 爬取历史记录管理
-5. 定时爬取任务
 
 ## 项目结构
 
@@ -23,7 +22,6 @@
 - `ExportController`: 处理文件导出功能（Word和PDF）
 - `HistoryController`: 处理历史记录查询功能
 - `UserController`: 处理用户认证相关功能
-- `ScheduledCrawlerController`: 处理定时爬取任务的配置和管理
 
 ### 服务层 (`service`)
 
@@ -33,7 +31,6 @@
 - `FileExportService`: 文件导出服务，支持Word和PDF格式的导出
 - `CrawlHistoryService`: 爬取历史记录服务
 - `UserService`: 用户管理服务，处理注册、登录等功能
-- `ScheduledCrawlerService`: 定时爬取任务服务，管理自动化爬取任务
 
 ### 数据访问层 (`repository`)
 
@@ -62,7 +59,6 @@
 包含系统配置类：
 
 - `WebSecurityConfig`: 安全配置
-- `SchedulerConfig`: 定时任务配置
 
 ## 代码结构和组织原则
 

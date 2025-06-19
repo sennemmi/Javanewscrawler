@@ -21,9 +21,6 @@
       1. [删除单个历史记录](#251-删除单个历史记录)
       2. [批量删除历史记录](#252-批量删除历史记录)
       3. [清空历史记录](#253-清空历史记录)
-   6. [定时爬取任务管理](#26-定时爬取任务管理)
-      1. [查看定时爬取任务状态](#261-查看定时爬取任务状态)
-      2. [手动触发定时爬取任务](#262-手动触发定时爬取任务)
    7. [数据分析功能](#27-数据分析功能)
       1. [词云数据生成](#271-词云数据生成)
       2. [热词排行榜](#272-热词排行榜)
@@ -464,12 +461,6 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 | 500 Internal Server Error | 服务器内部错误 | 文件生成过程中发生错误、爬取新闻内容失败、字体处理问题 |
 
 **技术说明**:
-- **新增功能**:
-  - `fontFamily`参数：允许用户选择自定义字体
-  - `pageWidth`参数：允许用户调整页面宽度
-  - `skipHistoryRecord`参数：允许用户选择是否将导出操作记录到历史中
-  - 支持POST方法：更便于传递复杂参数，尤其是在前端JavaScript中
-
 - **文档排版定制**:
   - 用户可通过`textFontSize`参数控制基础正文字体大小（范围8-32）
   - 用户可通过`lineSpacing`参数控制行间距倍数（范围1.0-3.0）
@@ -482,6 +473,12 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
     - `footerFontSize`: 页脚字体大小，默认为 max(textFontSize-4, 8)
   - 所有字体大小参数都为可选参数，如不提供则根据基础正文字体大小自动计算
   - 段落间距也会根据字体大小和行间距自动调整
+
+- **字体支持**:
+  - 允许用户通过`fontFamily`参数选择字体
+  - 支持常见中文字体，如"微软雅黑"、"宋体"、"黑体"、"楷体"等
+  - 支持常见英文字体，如"Arial"、"Times New Roman"等
+  - 确保中文字符正确显示
 
 - **文档格式化**:
   - 文档包含标准化的标题、副标题(来源和发布时间)、正文段落和页脚
@@ -499,17 +496,6 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
   - 图片居中显示，并保持适当的尺寸比例
   - 支持图片说明文字的展示
   - 当图片无法下载时提供替代文本
-
-- **字体支持**:
-  - 允许用户通过`fontFamily`参数选择字体
-  - 支持常见中文字体，如"微软雅黑"、"宋体"、"黑体"、"楷体"等
-  - 支持常见英文字体，如"Arial"、"Times New Roman"等
-  - 确保中文字符正确显示
-
-- **安全处理**:
-  - 对文件名进行安全处理，移除不合法的文件名字符
-  - URL 编码文件名，确保兼容不同浏览器和操作系统
-  - 支持跳过历史记录功能，避免导出操作污染用户的爬取历史
 
 - **文件格式说明**:
   - Word文档使用DOCX格式（Office Open XML），兼容Microsoft Word 2007及以上版本
@@ -846,79 +832,6 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 - 返回的新闻数据包含完整的内容，包括标题、来源、发布时间、正文等
 - 新闻数据按照ID排序
 
-### 2.6 定时爬取任务管理
-
-#### 2.6.1 查看定时爬取任务状态
-
-**接口名称**: Get Scheduled Task Status
-
-**路径**: `/api/scheduled/status`
-
-**请求方法**: `GET`
-
-**功能描述**: 【管理】获取定时爬取任务的状态信息，包括任务是否启用、定时执行时间、目标URL等信息。
-
-**认证要求**: 需要认证（用户必须登录）
-
-**请求参数**: 无
-
-**响应**:
-
-**成功响应** (200 OK):
-```json
-{
-  "isEnabled": true,
-  "scheduledTimes": "每日8:00和16:00",
-  "targetUrl": "https://news.sina.com.cn/",
-  "lastUpdateTime": "2023-09-15T08:00:00"
-}
-```
-
-**可能的错误码**:
-| 状态码 | 描述 | 可能原因 |
-|--------|------|----------|
-| 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
-| 500 Internal Server Error | 服务器内部错误 | 获取任务状态失败 |
-
-#### 2.6.2 手动触发定时爬取任务
-
-**接口名称**: Trigger Scheduled Task
-
-**路径**: `/api/scheduled/trigger`
-
-**请求方法**: `POST`
-
-**功能描述**: 【高级】手动触发定时爬取新浪新闻首页的任务，系统会立即执行爬取操作，并将爬取的新闻数据存入数据库。
-
-**认证要求**: 需要认证（用户必须登录）
-
-**请求参数**: 无
-
-**响应**:
-
-**成功响应** (200 OK):
-```json
-{
-  "success": true,
-  "message": "手动爬取任务完成",
-  "crawledCount": 25,
-  "url": "https://news.sina.com.cn/"
-}
-```
-
-**可能的错误码**:
-| 状态码 | 描述 | 可能原因 |
-|--------|------|----------|
-| 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
-| 500 Internal Server Error | 服务器内部错误 | 触发爬取任务失败 |
-
-**技术说明**:
-- **任务执行**:
-  - 系统会立即执行爬取任务，与定时任务使用相同的爬取逻辑
-  - 爬取的新闻数据会被保存到数据库中
-  - 操作会记录到用户的爬取历史中，使用类型`INDEX_CRAWL`
-  - 不同于自动定时任务（使用系统管理员ID），手动触发会使用当前用户ID记录历史
-
 ## 2.7 数据分析功能
 
 此模块提供了对爬取的新闻数据进行分析的API接口，包括词云数据生成、热词排行榜、关键词时间趋势分析和内容来源分布分析等功能。
@@ -931,7 +844,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 
 **请求方法**: `POST`
 
-**功能描述**: 【数据分析】从指定时间范围内的新闻数据中提取关键词，生成词云数据。支持从标题、正文或关键词字段中提取文本。
+**功能描述**: 【数据分析】从指定爬取历史关联的新闻数据中提取关键词，生成词云数据。
 
 **认证要求**: 需要认证（用户必须登录）
 
@@ -949,8 +862,8 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 **请求示例**:
 ```json
 {
-  "historyId": 12345,
-  "limit": 50
+    "historyId": 12345,
+    "limit": 50
 }
 ```
 
@@ -974,21 +887,21 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
     },
     // ... 更多词语及其权重
   ],
-  "total": 100
+  "total": 50
 }
 ```
 
 **可能的错误码**:
 | 状态码 | 描述 | 可能原因 |
 |--------|------|----------|
-| 400 Bad Request | 请求参数错误 | 参数格式不正确 |
+| 400 Bad Request | 请求参数错误 | historyId参数无效或缺失 |
 | 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
 | 500 Internal Server Error | 服务器内部错误 | 数据库查询失败、分词处理错误 |
 
 **技术说明**:
-- 系统会根据选择的数据源（标题、正文或关键词）从数据库中提取文本
-- 对文本进行分词处理，剔除停用词（常见的没有分析价值的词）
-- 统计词频并按频率降序排列，返回指定数量的高频词
+- 系统默认从新闻数据的`keywords`字段提取关键词
+- 对关键词进行统计，生成适合词云展示的数据格式
+- 返回的词云数据按权重（出现频率）降序排序
 - 返回的词云数据格式适用于常见的词云可视化库，如`wordcloud2.js`
 
 ### 2.7.2 热词排行榜
@@ -999,7 +912,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 
 **请求方法**: `POST`
 
-**功能描述**: 【数据分析】从指定时间范围内的新闻数据中提取关键词，生成热词排行榜。
+**功能描述**: 【数据分析】从指定爬取历史关联的新闻数据中提取关键词，生成热词排行榜。
 
 **认证要求**: 需要认证（用户必须登录）
 
@@ -1011,16 +924,14 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 **请求体参数**:
 | 参数名 | 类型 | 必须 | 描述 | 默认值 | 可选值 |
 |--------|------|------|------|---------|--------|
+| historyId | Long | 是 | 关联的爬取历史记录ID，表示对哪次爬取的数据进行分析 | 必须是有效的历史记录ID |
 | limit | Integer | 否 | 返回结果数量限制 | 20 | 1-100 |
-| startDate | String | 否 | 开始时间，ISO格式 | null | 有效的日期时间字符串 |
-| endDate | String | 否 | 结束时间，ISO格式 | null | 有效的日期时间字符串 |
 
 **请求示例**:
 ```json
 {
-  "limit": 10,
-  "startDate": "2023-01-01T00:00:00",
-  "endDate": "2023-12-31T23:59:59"
+    "historyId": 12345,
+    "limit": 50
 }
 ```
 
@@ -1044,19 +955,19 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
     },
     // ... 更多热词及其出现次数
   ],
-  "total": 10
+  "total": 50
 }
 ```
 
 **可能的错误码**:
 | 状态码 | 描述 | 可能原因 |
 |--------|------|----------|
-| 400 Bad Request | 请求参数错误 | 参数格式不正确 |
+| 400 Bad Request | 请求参数错误 | historyId参数无效或缺失 |
 | 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
 | 500 Internal Server Error | 服务器内部错误 | 数据库查询失败 |
 
 **技术说明**:
-- 系统直接从新闻数据的`keywords`字段提取关键词，这些关键词是已预处理好的
+- 系统从新闻数据中提取关键词并进行统计
 - 统计每个关键词的出现次数，按出现次数降序排列
 - 返回的热词数据可用于生成排行榜、柱状图等可视化效果
 
@@ -1068,7 +979,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 
 **请求方法**: `POST`
 
-**功能描述**: 【数据分析】分析指定关键词在一段时间内的出现频率变化，生成时间趋势数据。
+**功能描述**: 【数据分析】分析指定关键词在爬取历史关联的新闻数据中的出现频率变化，生成时间趋势数据。
 
 **认证要求**: 需要认证（用户必须登录）
 
@@ -1080,18 +991,16 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 **请求体参数**:
 | 参数名 | 类型 | 必须 | 描述 | 默认值 | 可选值 |
 |--------|------|------|------|---------|--------|
+| historyId | Long | 是 | 关联的爬取历史记录ID | - | 必须是有效的历史记录ID |
 | keyword | String | 是 | 要分析的关键词 | - | 任何非空字符串 |
-| timeUnit | String | 否 | 时间单位 | "day" | "day", "week", "month" |
-| startDate | String | 否 | 开始时间，ISO格式 | null | 有效的日期时间字符串 |
-| endDate | String | 否 | 结束时间，ISO格式 | null | 有效的日期时间字符串 |
+| timeUnit | String | 否 | 时间单位 | "day" | "day", "hour6", "hour12" |
 
 **请求示例**:
 ```json
 {
+  "historyId": 12345,
   "keyword": "科技",
-  "timeUnit": "week",
-  "startDate": "2023-01-01T00:00:00",
-  "endDate": "2023-12-31T23:59:59"
+  "timeUnit": "day"
 }
 ```
 
@@ -1101,18 +1010,18 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 ```json
 {
   "keyword": "科技",
-  "timeUnit": "week",
+  "timeUnit": "day",
   "trendData": [
     {
-      "timePoint": "2023-01",
+      "timePoint": "2023-10-15",
       "count": 12
     },
     {
-      "timePoint": "2023-02",
+      "timePoint": "2023-10-16",
       "count": 18
     },
     {
-      "timePoint": "2023-03",
+      "timePoint": "2023-10-17",
       "count": 15
     },
     // ... 更多时间点及对应的计数
@@ -1123,13 +1032,13 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 **可能的错误码**:
 | 状态码 | 描述 | 可能原因 |
 |--------|------|----------|
-| 400 Bad Request | 请求参数错误 | 关键词为空、时间单位无效 |
+| 400 Bad Request | 请求参数错误 | 关键词为空、historyId参数无效或缺失 |
 | 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
 | 500 Internal Server Error | 服务器内部错误 | 数据库查询失败 |
 
 **技术说明**:
 - 系统根据指定的关键词，查询包含该关键词的新闻记录
-- 根据指定的时间单位（日、周、月）将数据按时间分组
+- 根据指定的时间单位（日、6小时、12小时）将数据按时间分组
 - 统计每个时间点中包含关键词的新闻数量
 - 返回的时间趋势数据可用于生成折线图、面积图等时序可视化效果
 
@@ -1141,7 +1050,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 
 **请求方法**: `POST`
 
-**功能描述**: 【数据分析】分析指定时间范围内新闻的来源分布情况。
+**功能描述**: 【数据分析】分析爬取历史关联的新闻数据中的来源分布情况。
 
 **认证要求**: 需要认证（用户必须登录）
 
@@ -1153,14 +1062,12 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 **请求体参数**:
 | 参数名 | 类型 | 必须 | 描述 | 默认值 | 可选值 |
 |--------|------|------|------|---------|--------|
-| startDate | String | 否 | 开始时间，ISO格式 | null | 有效的日期时间字符串 |
-| endDate | String | 否 | 结束时间，ISO格式 | null | 有效的日期时间字符串 |
+| historyId | Long | 是 | 关联的爬取历史记录ID | - | 必须是有效的历史记录ID |
 
 **请求示例**:
 ```json
 {
-  "startDate": "2023-01-01T00:00:00",
-  "endDate": "2023-12-31T23:59:59"
+  "historyId": 12345
 }
 ```
 
@@ -1183,14 +1090,15 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
       "count": 98
     },
     // ... 更多来源及其计数
-  ]
+  ],
+  "total": 3
 }
 ```
 
 **可能的错误码**:
 | 状态码 | 描述 | 可能原因 |
 |--------|------|----------|
-| 400 Bad Request | 请求参数错误 | 参数格式不正确 |
+| 400 Bad Request | 请求参数错误 | historyId参数无效或缺失 |
 | 401 Unauthorized | 未认证 | 用户未登录或会话已过期 |
 | 500 Internal Server Error | 服务器内部错误 | 数据库查询失败 |
 
@@ -1216,8 +1124,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 | 删除历史记录 | `/api/history/{id}` | ✅ 已接入 | 历史记录项的删除按钮 |
 | 批量删除历史 | `/api/history/batch` | ❌ 未接入 | 需要实现批量选择和删除功能 |
 | 清空历史记录 | `/api/history/all` | ✅ 已接入 | 历史记录顶部的清空按钮 |
-| 定时任务状态 | `/api/scheduled/status` | ❌ 未接入 | 需要添加定时任务管理页面 |
-| 手动触发定时任务 | `/api/scheduled/trigger` | ❌ 未接入 | 需要添加定时任务管理页面 |
+| 获取历史记录关联新闻 | `/api/history/{historyId}/news` | ❌ 未接入 | 需在历史记录详情页面添加 |
 | 词云数据生成 | `/api/analysis/word-cloud` | ❌ 未接入 | 需要添加数据分析页面 |
 | 热词排行榜 | `/api/analysis/hot-words` | ❌ 未接入 | 需要添加数据分析页面 |
 | 关键词时间趋势 | `/api/analysis/time-trend` | ❌ 未接入 | 需要添加数据分析页面 |
@@ -1230,16 +1137,12 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
    - 添加热词排行榜
    - 添加关键词时间趋势图
    - 添加来源分布饼图
-   - 提供日期范围选择器
+   - 提供历史记录选择器，允许用户选择要分析的爬取历史
 
-2. **定时爬取管理页面**
-   - 展示定时任务状态
-   - 提供手动触发按钮
-   - 显示最近的定时爬取结果
-
-3. **高级历史记录管理**
+2. **高级历史记录管理**
    - 添加批量选择和删除功能
    - 按爬取类型筛选历史记录
+   - 添加历史记录详情页面，显示关联的新闻数据
    - 提供历史记录导出功能
 
 ## 错误处理
@@ -1302,6 +1205,7 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 
 | 版本 | 日期 | 描述 |
 |------|------|------|
+| 2.0.0 | 2024-06-18 | 更新数据分析API文档，修改为基于历史记录ID的数据分析方式；调整API接入状态，移除未实现的定时任务相关API |
 | 1.9.0 | 2023-12-20 | 添加数据分析功能，支持词云、热词排行榜、时间趋势和来源分布分析 |
 | 1.8.0 | 2023-12-10 | 增强导出功能，添加字体选择、页面宽度设置、跳过历史记录选项，支持POST方法，美化导出表单UI |
 | 1.7.0 | 2023-11-15 | 添加历史记录管理功能，支持删除单条、批量删除和清空历史记录 |
@@ -1339,3 +1243,93 @@ Cache-Control: must-revalidate, post-check=0, pre-check=0
 - `t_news_data`: 存储新闻数据，主键是`id`，外键`crawl_history_id`关联到`t_crawl_history.id`
 
 这种设计实现了完整的数据关联链路：用户->爬取历史->新闻数据，便于追踪和分析。
+
+## 3. API 测试指南 - Postman
+
+本章节旨在指导用户如何使用 Postman 工具测试数据分析相关的 API，并处理认证。
+
+**重要提示**：在进行数据分析 API 调用之前，请确保您已经成功运行了爬虫，并且数据库中有一些新闻数据和 `historyId`。您可以先通过 `/api/history/recent` 接口获取有效的 `historyId`。
+
+### 3.1 获取认证会话（登录）
+
+*   **请求类型**: `POST`
+*   **请求 URL**: `http://localhost:8080/api/user/login` 
+*   **Headers**:
+    *   `Content-Type`: `application/x-www-form-urlencoded`
+*   **Body**: 选择 `x-www-form-urlencoded`，并添加以下键值对：
+    *   `username`: 您的用户名 (例如: `testuser`)
+    *   `password`: 您的密码 (例如: `testpassword`)
+
+如果登录成功，您会收到一个包含 `JSESSIONID` cookie 的响应
+
+### 3.2 测试数据分析 API
+
+一旦您成功登录并获得了 `JSESSIONID`，您就可以测试数据分析 API 了。Postman 会自动管理会话 cookie。
+
+#### 3.2.1 词云数据 (`/api/analysis/word-cloud`)
+
+*   **请求类型**: `POST`
+*   **请求 URL**: `http://localhost:8080/api/analysis/word-cloud`
+*   **Headers**:
+    *   `Content-Type`: `application/json`
+*   **Body**: 选择 `raw` 和 `JSON`，然后输入以下 JSON 格式的请求体：
+
+    ```json
+    {
+        "limit": 50,
+        "historyId": 12345
+    }
+    ```
+    *   `limit`: 返回词语的数量限制。
+    *   `historyId`: 这是**必填**参数，用于指定要分析的新闻数据所属的抓取历史ID。您需要一个有效的 `historyId` 才能成功获取数据。
+
+#### 3.2.2 热词排行榜 (`/api/analysis/hot-words`)
+
+*   **请求类型**: `POST`
+*   **请求 URL**: `http://localhost:8080/api/analysis/hot-words`
+*   **Headers**:
+    *   `Content-Type`: `application/json`
+*   **Body**: 选择 `raw` 和 `JSON`，然后输入以下 JSON 格式的请求体：
+
+    ```json
+    {
+        "limit": 20,
+        "historyId": 12345
+    }
+    ```
+    *   `limit`: 返回热词的数量限制。
+    *   `historyId`: 这是**必填**参数，用于指定要分析的新闻数据所属的抓取历史ID。
+
+#### 3.2.3 关键词时间趋势分析 (`/api/analysis/time-trend`)
+
+*   **请求类型**: `POST`
+*   **请求 URL**: `http://localhost:8080/api/analysis/time-trend`
+*   **Headers**:
+    *   `Content-Type`: `application/json`
+*   **Body**: 选择 `raw` 和 `JSON`，然后输入以下 JSON 格式的请求体：
+
+    ```json
+    {
+        "keyword": "示例关键词",
+        "timeUnit": "day",
+        "historyId": 12345
+    }
+    ```
+    *   `keyword`: 要分析的关键词。
+    *   `timeUnit`: 时间单位，例如 `day`, `week`, `month`, `year`。
+    *   `historyId`: 这是**必填**参数，用于指定要分析的新闻数据所属的抓取历史ID。
+
+#### 3.2.4 内容来源分布 (`/api/analysis/source-distribution`)
+
+*   **请求类型**: `POST`
+*   **请求 URL**: `http://localhost:8080/api/analysis/source-distribution`
+*   **Headers**:
+    *   `Content-Type`: `application/json`
+*   **Body**: 选择 `raw` 和 `JSON`，然后输入以下 JSON 格式的请求体：
+
+    ```json
+    {
+        "historyId": 12345
+    }
+    ```
+    *   `historyId`: 这是**必填**参数，用于指定要分析的新闻数据所属的抓取历史ID。

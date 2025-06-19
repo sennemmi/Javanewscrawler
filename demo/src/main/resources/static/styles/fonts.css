@@ -1,0 +1,64 @@
+/* 字体定义文件 */
+
+/* 预加载字体文件 */
+head::after {
+    content: '';
+    display: block;
+    height: 0;
+    width: 0;
+    background: url('../fonts/方正书宋-简体.ttf') format('truetype'),
+                url('../fonts/方正仿宋-简体.TTF') format('truetype'),
+                url('../fonts/方正黑体-简体.TTF') format('truetype'),
+                url('../fonts/方正楷体-简体.ttf') format('truetype');
+    position: absolute;
+    left: -9999px;
+}
+
+@font-face {
+    font-family: '方正书宋-简体';
+    src: url('../fonts/方正书宋-简体.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: '方正仿宋-简体';
+    src: url('../fonts/方正仿宋-简体.TTF') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: '方正黑体-简体';
+    src: url('../fonts/方正黑体-简体.TTF') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: '方正楷体-简体';
+    src: url('../fonts/方正楷体-简体.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* 字体预览样式 */
+.font-preview-song {
+    font-family: '方正书宋-简体', serif;
+}
+
+.font-preview-fangsong {
+    font-family: '方正仿宋-简体', serif;
+}
+
+.font-preview-hei {
+    font-family: '方正黑体-简体', sans-serif;
+}
+
+.font-preview-kai {
+    font-family: '方正楷体-简体', serif;
+} 

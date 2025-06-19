@@ -1,790 +1,580 @@
 /**
- * 数据分析页面脚本
+ * 数据分析功能 JavaScript
  */
-$(document).ready(function() {
-    // 初始化主题切换
-    initTheme();
-    
-    // 初始化侧边栏
-    initSidebar();
-    
-    // 检查用户登录状态
-    checkLoginStatus();
 
-    // 从URL中获取historyId参数
-    getHistoryIdFromUrl();
+// 全局变量
+let currentHistoryId = null; // 当前分析的历史记录ID
+let wordCloudData = null; // 词云数据
+let hotWordsData = null; // 热词数据
+let sourceDistributionData = null; // 来源分布数据
 
-    // 初始化所有图表
-    initAllCharts();
+// 常量
+const MAX_HOT_WORDS = 10; // 热词排行显示数量
+const DEFAULT_KEYWORD = "经济"; // 默认关键词
 
-    // 事件绑定
-    bindEvents();
-    
-    // 加载历史记录
-    loadHistoryList();
-});
+// DOM元素
+const getEl = (id) => document.getElementById(id);
+const analysisView = getEl('analysisView');
+const analysisBackBtn = getEl('analysisBackBtn');
+const resultView = getEl('resultView');
+const homeView = getEl('homeView');
+const wordCloudContainer = getEl('wordCloudContainer');
+const hotWordsList = getEl('hotWordsList');
+const trendChartContainer = getEl('trendChartContainer');
+const sourceChartContainer = getEl('sourceChartContainer');
+const trendKeywordInput = getEl('trendKeywordInput');
+const trendSearchBtn = getEl('trendSearchBtn');
+const analysisType = getEl('analysisType');
+const analysisTabs = document.querySelectorAll('.analysis-tab');
+const analysisCards = document.querySelectorAll('.analysis-card');
 
-// 全局变量，存储从URL中获取的历史ID
-let historyId = null;
-
-/**
- * 初始化主题切换
- */
-function initTheme() {
-    // 获取当前主题
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    
-    // 设置主题切换按钮图标
-    updateThemeIcon();
-    
-    // 主题切换事件
-    $('#themeToggle').on('click', function() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        updateThemeIcon();
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    // 绑定事件
+    analysisBackBtn.addEventListener('click', () => {
+        // 返回结果页面
+        analysisView.style.display = 'none';
+        resultView.style.display = 'block';
     });
-}
 
-/**
- * 更新主题图标
- */
-function updateThemeIcon() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const iconHtml = currentTheme === 'light' 
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>';
-    
-    $('#themeToggle').html(iconHtml);
-}
-
-/**
- * 初始化侧边栏
- */
-function initSidebar() {
-    // 侧边栏折叠/展开
-    $('#toggleSidebar').on('click', function() {
-        $('#sidebar').toggleClass('collapsed');
+    // 分析类型选择
+    analysisType.addEventListener('change', (e) => {
+        const selectedType = e.target.value;
+        filterAnalysisCards(selectedType);
     });
-}
 
-/**
- * 从URL中获取historyId参数
- */
-function getHistoryIdFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    historyId = urlParams.get('historyId');
-    
-    if (!historyId) {
-        console.error("URL中缺少historyId参数，数据分析页面无法正常加载。");
-        // 可以考虑重定向回主页或显示一个通用错误页面
-        // window.location.href = 'index.html'; 
-    }
-    
-    if (historyId) {
-        // 如果有historyId参数，显示过滤提示
-        $('#history-filter-info').removeClass('d-none').text(`当前正在分析爬取历史ID: ${historyId} 的数据`);
-    } else {
-        $('#history-filter-info').addClass('d-none');
-    }
-}
-
-/**
- * 检查用户登录状态
- */
-function checkLoginStatus() {
-    $.ajax({
-        url: '/api/user/current',
-        type: 'GET',
-        success: function(response) {
-            if (response.username) {
-                // 更新用户信息
-                $('.user-info').show();
-                $('.auth-buttons').hide();
-                $('#username').text(response.username);
-            } else {
-                // 未登录，显示登录按钮
-                $('.user-info').hide();
-                $('.auth-buttons').show();
-            }
-        },
-        error: function() {
-            // 获取用户信息失败，显示登录按钮
-            $('.user-info').hide();
-            $('.auth-buttons').show();
-        }
-    });
-}
-
-/**
- * 加载历史记录列表
- */
-function loadHistoryList() {
-    $.ajax({
-        url: '/api/history/recent?limit=5',
-        type: 'GET',
-        success: function(response) {
-            const historyList = $('#historyList');
-            historyList.empty();
+    // 标签切换
+    analysisTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // 更新激活的标签
+            analysisTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
             
-            if (response && response.length > 0) {
-                response.forEach(function(item) {
-                    const historyItem = $('<li class="history-item"></li>');
-                    const historyLink = $('<a href="#"></a>').text(item.title || `爬取记录 #${item.id}`);
-                    
-                    historyLink.on('click', function(e) {
-                        e.preventDefault();
-                        window.location.href = `analysis.html?historyId=${item.id}`;
-                    });
-                    
-                    historyItem.append(historyLink);
-                    historyList.append(historyItem);
-                });
-            } else {
-                historyList.append('<li class="history-empty">暂无历史记录</li>');
-            }
-        },
-        error: function() {
-            const historyList = $('#historyList');
-            historyList.empty();
-            historyList.append('<li class="history-empty">加载历史失败</li>');
-        }
-    });
-}
-
-/**
- * 初始化所有图表
- */
-function initAllCharts() {
-    // 初始化各个图表
-    loadWordCloud();
-    loadHotWords();
-    loadSourceDistribution();
-    
-    // 时间趋势图需要关键词，默认加载一个热门关键词
-    loadInitialTrendKeyword();
-}
-
-/**
- * 绑定事件处理
- */
-function bindEvents() {
-    // 应用日期过滤器 (此按钮已移除，此处事件绑定不再需要)
-    // $('#apply-date-filter').on('click', function() {
-    //     refreshAllCharts();
-    // });
-    
-    // 词云数据源切换 (已移除，词云固定分析关键词)
-    // $('.word-cloud-source').on('click', function(e) {
-    //     e.preventDefault();
-    //     const source = $(this).data('source');
-    //     $('#wordCloudSourceDropdown').text('数据源: ' + getSourceName(source));
-    //     loadWordCloud(source);
-    // });
-    
-    // 时间趋势查询
-    $('#search-trend').on('click', function() {
-        const keyword = $('#trend-keyword').val().trim();
-        if (keyword) {
-            loadTimeTrend(keyword);
-        } else {
-            showMessage('请输入关键词', 'warning');
-        }
-    });
-    
-    // 按回车键搜索趋势
-    $('#trend-keyword').on('keypress', function(e) {
-        if (e.which === 13) {
-            $('#search-trend').click();
-        }
-    });
-    
-    // 退出登录
-    $('#logout-btn').on('click', function() {
-        $.ajax({
-            url: '/api/user/logout',
-            type: 'POST',
-            success: function() {
-                window.location.href = 'login.html';
-            }
+            // 筛选卡片
+            const tabType = tab.getAttribute('data-tab');
+            filterAnalysisCards(tabType);
         });
     });
-    
-    // 清空历史记录
-    $('#clearAllHistory').on('click', function() {
-        if (confirm('确定要清空所有历史记录吗？')) {
-            $.ajax({
-                url: '/api/history/clear',
-                type: 'DELETE',
-                success: function() {
-                    $('#historyList').empty().append('<li class="history-empty">暂无历史记录</li>');
-                    // 清空所有图表并提示用户选择历史记录
-                    historyId = null; // 重置historyId
-                    $('#history-filter-info').addClass('d-none');
-                    initAllCharts(); // 重新初始化图表，会显示空数据提示
-                }
-            });
+
+    // 趋势搜索按钮
+    trendSearchBtn.addEventListener('click', () => {
+        const keyword = trendKeywordInput.value.trim();
+        if (keyword && currentHistoryId) {
+            loadKeywordTimeTrend(keyword);
+        } else {
+            alert('请输入关键词');
         }
     });
-}
+
+    trendKeywordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') trendSearchBtn.click();
+    });
+});
 
 /**
- * 刷新所有图表
+ * 根据类型筛选分析卡片
+ * @param {string} type 分析类型
  */
-function refreshAllCharts() {
-    loadWordCloud(); // 词云数据固定为关键词
-    loadHotWords();
-    loadSourceDistribution();
-    
-    // 重新加载热门关键词，确保时间趋势图更新
-    loadInitialTrendKeyword();
-}
-
-/**
- * 获取数据源名称
- */
-// function getSourceName(source) {
-//     switch(source) {
-//         case 'title': return '标题';
-//         case 'content': return '正文';
-//         case 'keywords': return '关键词';
-//         default: return '标题';
-//     }
-// }
-
-/**
- * 获取当前时间范围参数 (现在只返回historyId)
- */
-function getTimeRangeParams() {
-    const params = {};
-    
-    // 如果有历史ID，添加到参数中
-    if (historyId) {
-        params.historyId = historyId;
+function filterAnalysisCards(type) {
+    if (type === 'all') {
+        analysisCards.forEach(card => card.style.display = 'block');
+    } else {
+        analysisCards.forEach(card => {
+            if (card.getAttribute('data-type') === type) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
     }
+}
+
+/**
+ * 启动数据分析，加载所有分析数据
+ * @param {number} historyId 历史记录ID
+ */
+function startAnalysis(historyId) {
+    if (!historyId) {
+        alert('无法获取历史记录ID，无法进行分析');
+        return;
+    }
+
+    currentHistoryId = historyId;
+    showView(analysisView);
     
-    return params;
+    // 初始化默认显示所有卡片
+    filterAnalysisCards('all');
+    
+    // 加载词云数据
+    loadWordCloudData();
+    
+    // 加载热词排行
+    loadHotWordsData();
+    
+    // 加载默认关键词趋势
+    trendKeywordInput.value = DEFAULT_KEYWORD;
+    loadKeywordTimeTrend(DEFAULT_KEYWORD);
+    
+    // 加载来源分布
+    loadSourceDistribution();
 }
 
 /**
  * 加载词云数据
- * 始终分析关键词数据，不再接收source参数
  */
-function loadWordCloud() {
-    if (!historyId) {
-        showMessage('请先选择或进行一次爬取历史，然后查看数据分析', 'info');
-        clearChart('wordCloudChart', '暂无词云数据，请选择历史记录');
-        return;
-    }
-
-    const limit = $('#wordCloudLimit').val();
-    const requestData = {
-        historyId: parseInt(historyId),
-        limit: parseInt(limit)
-    };
-
-    $.ajax({
-        url: '/api/analysis/word-cloud',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(requestData),
-        success: function(response) {
-            if (response && response.wordCloud && response.wordCloud.length > 0) {
-                renderWordCloud(response.wordCloud);
+async function loadWordCloudData() {
+    if (!currentHistoryId) return;
+    
+    showLoading(wordCloudContainer);
+    
+    try {
+        const response = await fetch('/api/analysis/word-cloud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                historyId: currentHistoryId,
+                limit: 100
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            wordCloudData = data.wordCloud;
+            
+            if (wordCloudData && wordCloudData.length > 0) {
+                renderWordCloud();
             } else {
-                console.warn('词云数据为空或格式不正确');
-                $('#word-cloud-empty').removeClass('d-none');
+                showEmptyState(wordCloudContainer, '没有足够的数据生成词云');
             }
-        },
-        error: function(xhr) {
-            console.error('加载词云数据失败:', xhr.status, xhr.statusText);
-            console.error('响应内容:', xhr.responseText);
-            try {
-                const errorResponse = JSON.parse(xhr.responseText);
-                console.error('错误详情:', errorResponse);
-            } catch (e) {
-                console.error('无法解析错误响应');
-            }
+        } else {
+            const error = await response.text();
+            showError(wordCloudContainer, `加载词云数据失败: ${error}`);
         }
-    });
+    } catch (error) {
+        console.error('加载词云错误:', error);
+        showError(wordCloudContainer, '加载词云数据时发生错误');
+    }
 }
 
 /**
  * 渲染词云
  */
-function renderWordCloud(wordCloudData) {
-    console.log('开始渲染词云, 数据条数:', wordCloudData.length);
+function renderWordCloud() {
+    if (!wordCloudData || wordCloudData.length === 0) return;
     
-    // 转换数据格式为wordcloud2.js所需的格式
+    // 清空容器
+    wordCloudContainer.innerHTML = '';
+    
+    // 转换数据格式
     const list = wordCloudData.map(item => [item.text, item.weight]);
     
-    console.log('词云数据前10项:', list.slice(0, 10));
-    
-    // 获取容器尺寸
-    const container = document.getElementById('word-cloud-container');
-    const width = container.offsetWidth;
-    const height = container.offsetHeight || 300;
-    
-    console.log('词云容器尺寸:', width, 'x', height);
-    
-    // 获取主题颜色
-    const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
-    
-    try {
-        // 清空容器
-        while (container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
-        
-        // 渲染词云
-        WordCloud(container, { 
-            list: list,
-            gridSize: 8,
-            weightFactor: function (size) {
-                return Math.pow(size, 0.8) * width / 1000;
-            },
-            fontFamily: 'Microsoft YaHei, sans-serif',
-            color: function() {
-                // 根据主题使用不同的颜色范围
-                if (isDarkTheme) {
-                    return 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 60%)';
-                } else {
-                    return 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 50%)';
-                }
-            },
-            hover: function(item) {
-                if (item) {
-                    console.log(item[0] + ': ' + item[1]);
-                }
-            },
-            click: function(item) {
-                if (item) {
-                    $('#trend-keyword').val(item[0]);
-                    loadTimeTrend(item[0]);
-                }
-            },
-            classes: 'word-cloud-text',
-            drawOutOfBound: false,
-            shrinkToFit: true,
-            minSize: 10
-        });
-        console.log('词云渲染完成');
-    } catch (e) {
-        console.error('词云渲染失败:', e);
-        $('#word-cloud-empty').removeClass('d-none').html(`
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
-                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-            </svg>
-            <span>词云渲染失败: ${e.message}</span>
-        `);
-    }
-}
-
-/**
- * 加载热词排行榜数据并渲染
- */
-function loadHotWords() {
-    // 显示加载中，隐藏空数据提示
-    $('#hot-words-loading').show();
-    $('#hot-words-empty').addClass('d-none');
-    
-    // 准备请求参数
-    const params = {
-        limit: 20,
-        ...getTimeRangeParams()
-    };
-    
-    console.log('热词请求参数:', params);
-    
-    // 发送请求
-    $.ajax({
-        url: '/api/analysis/hot-words',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(params),
-        success: function(response) {
-            $('#hot-words-loading').hide();
-            
-            console.log('热词API响应:', response);
-            
-            if (response && response.hotWords && response.hotWords.length > 0) {
-                console.log('热词数据项数:', response.hotWords.length);
-                renderHotWords(response.hotWords);
-            } else {
-                console.warn('热词数据为空或格式不正确');
-                $('#hot-words-empty').removeClass('d-none');
+    // 渲染词云
+    WordCloud(wordCloudContainer, {
+        list: list,
+        gridSize: 16,
+        weightFactor: 10,
+        fontFamily: 'Microsoft YaHei, sans-serif',
+        color: function(word, weight) {
+            // 根据权重设置颜色
+            const hue = 210 + Math.floor(weight / 100 * 90);
+            return `hsl(${hue}, 70%, 60%)`;
+        },
+        hover: function(item) {
+            if (item) {
+                // 可选: 添加鼠标悬停效果
             }
         },
-        error: function(xhr) {
-            $('#hot-words-loading').hide();
-            $('#hot-words-empty').removeClass('d-none');
-            console.error('加载热词数据失败:', xhr.status, xhr.statusText);
-            console.error('响应内容:', xhr.responseText);
-            try {
-                const errorResponse = JSON.parse(xhr.responseText);
-                console.error('错误详情:', errorResponse);
-            } catch (e) {
-                console.error('无法解析错误响应');
+        click: function(item) {
+            if (item) {
+                // 点击词语时，自动填充到趋势搜索框并触发搜索
+                trendKeywordInput.value = item[0];
+                trendSearchBtn.click();
+                
+                // 自动切换到趋势标签
+                analysisTabs.forEach(tab => {
+                    if (tab.getAttribute('data-tab') === 'timeTrend') {
+                        tab.click();
+                    }
+                });
             }
         }
     });
+}
+
+/**
+ * 加载热词排行数据
+ */
+async function loadHotWordsData() {
+    if (!currentHistoryId) return;
+    
+    showLoading(hotWordsList);
+    
+    try {
+        const response = await fetch('/api/analysis/hot-words', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                historyId: currentHistoryId,
+                limit: MAX_HOT_WORDS
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            hotWordsData = data.hotWords;
+            
+            if (hotWordsData && hotWordsData.length > 0) {
+                renderHotWordsList();
+            } else {
+                showEmptyState(hotWordsList, '没有足够的数据生成热词排行');
+            }
+        } else {
+            const error = await response.text();
+            showError(hotWordsList, `加载热词数据失败: ${error}`);
+        }
+    } catch (error) {
+        console.error('加载热词错误:', error);
+        showError(hotWordsList, '加载热词数据时发生错误');
+    }
 }
 
 /**
  * 渲染热词排行榜
  */
-function renderHotWords(hotWords) {
-    console.log('开始渲染热词排行榜, 数据条数:', hotWords.length);
+function renderHotWordsList() {
+    if (!hotWordsData || hotWordsData.length === 0) return;
+    
+    // 清空容器
+    hotWordsList.innerHTML = '';
+    
+    // 渲染列表
+    hotWordsData.forEach((item, index) => {
+        const rankClass = index < 3 ? `top-${index + 1}` : '';
+        
+        const itemHtml = `
+            <div class="hot-word-item" data-keyword="${item.word}">
+                <div class="hot-word-rank">
+                    <div class="hot-word-number ${rankClass}">${index + 1}</div>
+                    <div class="hot-word-text">${item.word}</div>
+                </div>
+                <div class="hot-word-count">${item.count}</div>
+            </div>
+        `;
+        
+        hotWordsList.innerHTML += itemHtml;
+    });
+    
+    // 绑定点击事件
+    document.querySelectorAll('.hot-word-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const keyword = item.getAttribute('data-keyword');
+            if (keyword) {
+                // 点击热词时，自动填充到趋势搜索框并触发搜索
+                trendKeywordInput.value = keyword;
+                trendSearchBtn.click();
+                
+                // 自动切换到趋势标签
+                analysisTabs.forEach(tab => {
+                    if (tab.getAttribute('data-tab') === 'timeTrend') {
+                        tab.click();
+                    }
+                });
+            }
+        });
+    });
+}
+
+/**
+ * 加载关键词时间趋势
+ * @param {string} keyword 关键词
+ */
+async function loadKeywordTimeTrend(keyword) {
+    if (!currentHistoryId || !keyword) return;
+    
+    showLoading(trendChartContainer);
     
     try {
-        // 初始化ECharts实例
-        const chartContainer = document.getElementById('hot-words-chart');
-        const chart = echarts.init(chartContainer);
-        
-        // 数据预处理，确保至少有数据
-        if (hotWords.length === 0) {
-            console.warn('热词数据为空，无法渲染');
-            $('#hot-words-empty').removeClass('d-none');
-            return;
-        }
-        
-        // 限制显示数量，太多会挤在一起
-        const displayCount = Math.min(hotWords.length, 15);
-        hotWords = hotWords.slice(0, displayCount);
-        
-        // 转换数据格式
-        const data = hotWords.map(item => ({
-            name: item.word,
-            value: item.count
-        }));
-        
-        console.log('热词图表数据:', data);
-        
-        // 图表配置
-        const option = {
-            tooltip: {
-                trigger: 'axis',
-                axisPointer: {
-                    type: 'shadow'
-                }
-            },
-            grid: {
-                left: '3%',
-                right: '4%',
-                bottom: '3%',
-                containLabel: true
-            },
-            xAxis: {
-                type: 'value',
-                boundaryGap: [0, 0.01]
-            },
-            yAxis: {
-                type: 'category',
-                data: data.map(item => item.name),
-                axisLabel: {
-                    interval: 0,
-                    rotate: 0
-                }
-            },
-            series: [
-                {
-                    name: '出现次数',
-                    type: 'bar',
-                    data: data.map(item => item.value),
-                    itemStyle: {
-                        color: function(params) {
-                            const colorList = [
-                                '#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae',
-                                '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570'
-                            ];
-                            return colorList[params.dataIndex % colorList.length];
-                        }
-                    }
-                }
-            ]
-        };
-        
-        // 设置图表
-        chart.setOption(option);
-        console.log('热词排行榜渲染完成');
-        
-        // 窗口大小改变时，调整图表大小
-        window.addEventListener('resize', function() {
-            chart.resize();
+        const response = await fetch('/api/analysis/time-trend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                historyId: currentHistoryId,
+                keyword: keyword,
+                timeUnit: 'day'
+            })
         });
-    } catch (e) {
-        console.error('热词排行榜渲染失败:', e);
-        $('#hot-words-empty').removeClass('d-none').html(`
-            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M8 15s1.5 2 4 2 4-2 4-2"></path>
-                <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                <line x1="15" y1="9" x2="15.01" y2="9"></line>
-            </svg>
-            <span>热词排行榜渲染失败: ${e.message}</span>
-        `);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.trendData && data.trendData.length > 0) {
+                renderTrendChart(data);
+            } else {
+                showEmptyState(trendChartContainer, `没有找到关键词"${keyword}"的趋势数据`);
+            }
+        } else {
+            const error = await response.text();
+            showError(trendChartContainer, `加载趋势数据失败: ${error}`);
+        }
+    } catch (error) {
+        console.error('加载趋势错误:', error);
+        showError(trendChartContainer, '加载趋势数据时发生错误');
     }
 }
 
 /**
- * 初始化时间趋势分析的关键词
+ * 渲染趋势图
+ * @param {Object} data 趋势数据
  */
-function loadInitialTrendKeyword() {
-    // 先尝试获取热词，用第一个热词作为默认关键词
-    $.ajax({
-        url: '/api/analysis/hot-words',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            limit: 1,
-            ...getTimeRangeParams()
-        }),
-        success: function(response) {
-            let keyword = '科技'; // 默认关键词
-            
-            if (response.hotWords && response.hotWords.length > 0) {
-                keyword = response.hotWords[0].word;
-            }
-            
-            $('#trend-keyword').val(keyword);
-            loadTimeTrend(keyword);
-        },
-        error: function() {
-            // 获取热词失败，使用默认关键词
-            const keyword = '科技';
-            $('#trend-keyword').val(keyword);
-            loadTimeTrend(keyword);
-        }
-    });
-}
-
-/**
- * 加载时间趋势数据并渲染
- */
-function loadTimeTrend(keyword) {
-    // 显示加载中，隐藏空数据提示
-    $('#time-trend-loading').show();
-    $('#time-trend-empty').addClass('d-none');
+function renderTrendChart(data) {
+    if (!data || !data.trendData || data.trendData.length === 0) return;
     
-    // 准备请求参数
-    const params = {
-        keyword: keyword,
-        timeUnit: $('#time-unit').val(),
-        ...getTimeRangeParams()
-    };
+    // 准备数据
+    const timePoints = data.trendData.map(item => item.timePoint);
+    const counts = data.trendData.map(item => item.count);
     
-    // 发送请求
-    $.ajax({
-        url: '/api/analysis/time-trend',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(params),
-        success: function(response) {
-            $('#time-trend-loading').hide();
-            
-            if (response.trendData && response.trendData.length > 0) {
-                renderTimeTrend(response.trendData, keyword);
-            } else {
-                $('#time-trend-empty').removeClass('d-none');
-            }
-        },
-        error: function(xhr) {
-            $('#time-trend-loading').hide();
-            $('#time-trend-empty').removeClass('d-none');
-            console.error('加载时间趋势数据失败:', xhr.responseText);
-        }
-    });
-}
-
-/**
- * 渲染时间趋势图
- */
-function renderTimeTrend(trendData, keyword) {
-    // 初始化ECharts实例
-    const chart = echarts.init(document.getElementById('time-trend-chart'));
+    // 初始化echarts
+    const chartDom = trendChartContainer;
+    const myChart = echarts.init(chartDom, null, { renderer: 'svg' });
     
-    // 数据预处理
-    const xAxisData = trendData.map(item => item.timePoint);
-    const seriesData = trendData.map(item => item.count);
-    
-    // 图表配置
+    // 配置项
     const option = {
         title: {
-            text: `关键词"${keyword}"的时间趋势`,
+            text: `关键词"${data.keyword}"时间趋势`,
             textStyle: {
-                fontSize: 14
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim()
             }
         },
         tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'shadow'
-            }
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true
+            trigger: 'axis'
         },
         xAxis: {
             type: 'category',
-            data: xAxisData,
+            data: timePoints,
+            axisLine: {
+                lineStyle: {
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                }
+            },
             axisLabel: {
-                interval: 0,
-                rotate: 30
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color-secondary').trim()
             }
         },
         yAxis: {
-            type: 'value'
-        },
-        series: [
-            {
-                name: '出现次数',
-                type: 'line',
-                data: seriesData,
-                markPoint: {
-                    data: [
-                        {type: 'max', name: '最大值'},
-                        {type: 'min', name: '最小值'}
-                    ]
-                },
-                markLine: {
-                    data: [
-                        {type: 'average', name: '平均值'}
-                    ]
-                },
-                smooth: true,
+            type: 'value',
+            name: '出现次数',
+            nameTextStyle: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color-secondary').trim()
+            },
+            axisLine: {
                 lineStyle: {
-                    width: 3,
-                    color: '#5470c6'
-                },
-                areaStyle: {
-                    opacity: 0.3,
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        {offset: 0, color: 'rgba(84, 112, 198, 0.5)'},
-                        {offset: 1, color: 'rgba(84, 112, 198, 0.1)'}
-                    ])
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                }
+            },
+            axisLabel: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color-secondary').trim()
+            },
+            splitLine: {
+                lineStyle: {
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim(),
+                    opacity: 0.3
                 }
             }
-        ]
+        },
+        series: [{
+            name: data.keyword,
+            type: 'line',
+            data: counts,
+            smooth: true,
+            symbolSize: 8,
+            itemStyle: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--active-color').trim()
+            },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: getComputedStyle(document.documentElement).getPropertyValue('--active-color').trim() + 'CC' },
+                    { offset: 1, color: getComputedStyle(document.documentElement).getPropertyValue('--active-color').trim() + '33' }
+                ])
+            }
+        }]
     };
     
-    // 设置图表
-    chart.setOption(option);
+    // 渲染图表
+    myChart.setOption(option);
     
-    // 窗口大小改变时，调整图表大小
+    // 响应窗口大小变化
     window.addEventListener('resize', function() {
-        chart.resize();
+        myChart.resize();
     });
 }
 
 /**
- * 加载来源分布数据并渲染
+ * 加载来源分布数据
  */
-function loadSourceDistribution() {
-    // 显示加载中，隐藏空数据提示
-    $('#source-loading').show();
-    $('#source-empty').addClass('d-none');
+async function loadSourceDistribution() {
+    if (!currentHistoryId) return;
     
-    // 准备请求参数
-    const params = {
-        ...getTimeRangeParams()
-    };
+    showLoading(sourceChartContainer);
     
-    // 发送请求
-    $.ajax({
-        url: '/api/analysis/source-distribution',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(params),
-        success: function(response) {
-            $('#source-loading').hide();
+    try {
+        const response = await fetch('/api/analysis/source-distribution', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                historyId: currentHistoryId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            sourceDistributionData = data.sourceDistribution;
             
-            if (response.sourceDistribution && response.sourceDistribution.length > 0) {
-                renderSourceDistribution(response.sourceDistribution);
+            if (sourceDistributionData && sourceDistributionData.length > 0) {
+                renderSourceDistribution();
             } else {
-                $('#source-empty').removeClass('d-none');
+                showEmptyState(sourceChartContainer, '没有足够的数据生成来源分布');
             }
-        },
-        error: function(xhr) {
-            $('#source-loading').hide();
-            $('#source-empty').removeClass('d-none');
-            console.error('加载来源分布数据失败:', xhr.responseText);
+        } else {
+            const error = await response.text();
+            showError(sourceChartContainer, `加载来源分布数据失败: ${error}`);
         }
-    });
+    } catch (error) {
+        console.error('加载来源分布错误:', error);
+        showError(sourceChartContainer, '加载来源分布数据时发生错误');
+    }
 }
 
 /**
  * 渲染来源分布图
  */
-function renderSourceDistribution(sourceData) {
-    // 初始化ECharts实例
-    const chart = echarts.init(document.getElementById('source-distribution-chart'));
+function renderSourceDistribution() {
+    if (!sourceDistributionData || sourceDistributionData.length === 0) return;
     
-    // 数据预处理
-    const data = sourceData.map(item => ({
+    // 准备数据
+    const chartData = sourceDistributionData.map(item => ({
         name: item.source,
         value: item.count
     }));
     
-    // 图表配置
+    // 初始化echarts
+    const chartDom = sourceChartContainer;
+    const myChart = echarts.init(chartDom, null, { renderer: 'svg' });
+    
+    // 配置项
     const option = {
+        title: {
+            text: '新闻来源分布',
+            left: 'center',
+            textStyle: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim()
+            }
+        },
         tooltip: {
             trigger: 'item',
             formatter: '{a} <br/>{b}: {c} ({d}%)'
         },
         legend: {
             orient: 'vertical',
-            right: 10,
-            top: 'center',
-            type: 'scroll',
-            formatter: function(name) {
-                return name.length > 10 ? name.substring(0, 10) + '...' : name;
+            left: 'left',
+            textStyle: {
+                color: getComputedStyle(document.documentElement).getPropertyValue('--text-color-secondary').trim()
             }
         },
         series: [
             {
                 name: '来源分布',
                 type: 'pie',
-                radius: ['40%', '70%'],
-                avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 10,
-                    borderColor: '#fff',
-                    borderWidth: 2
-                },
+                radius: '60%',
+                center: ['50%', '60%'],
+                data: chartData,
                 label: {
-                    show: false,
-                    position: 'center'
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim()
                 },
                 emphasis: {
-                    label: {
-                        show: true,
-                        fontSize: '16',
-                        fontWeight: 'bold'
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
                     }
-                },
-                labelLine: {
-                    show: false
-                },
-                data: data
+                }
             }
         ]
     };
     
-    // 设置图表
-    chart.setOption(option);
+    // 渲染图表
+    myChart.setOption(option);
     
-    // 窗口大小改变时，调整图表大小
+    // 响应窗口大小变化
     window.addEventListener('resize', function() {
-        chart.resize();
+        myChart.resize();
     });
 }
+
+/**
+ * 显示加载中状态
+ * @param {HTMLElement} container 容器元素
+ */
+function showLoading(container) {
+    container.innerHTML = `
+        <div class="loading-overlay">
+            <div class="analysis-loading"></div>
+        </div>
+    `;
+}
+
+/**
+ * 显示错误状态
+ * @param {HTMLElement} container 容器元素
+ * @param {string} message 错误信息
+ */
+function showError(container, message) {
+    container.innerHTML = `
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div class="empty-state-title">加载失败</div>
+            <div class="empty-state-desc">${message}</div>
+        </div>
+    `;
+}
+
+/**
+ * 显示空状态
+ * @param {HTMLElement} container 容器元素
+ * @param {string} message 提示信息
+ */
+function showEmptyState(container, message) {
+    container.innerHTML = `
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <div class="empty-state-title">暂无数据</div>
+            <div class="empty-state-desc">${message}</div>
+        </div>
+    `;
+}
+
+/**
+ * 切换视图
+ * @param {HTMLElement} view 要显示的视图
+ */
+function showView(view) {
+    // 隐藏所有视图
+    homeView.style.display = 'none';
+    resultView.style.display = 'none';
+    analysisView.style.display = 'none';
+    
+    // 显示指定视图
+    view.style.display = 'block';
+}
+
+// 导出接口，提供给外部调用
+window.dataAnalysis = {
+    startAnalysis: startAnalysis
+}; 

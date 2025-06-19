@@ -1,0 +1,35 @@
+2025-06-19 19:47:39.434 INFO  [main] com.hhu.javawebcrawler.demo.DemoApplicationTests - Starting DemoApplicationTests using Java 21.0.7 with PID 33180 (started by 98778 in E:\JavaWebProject\demo)
+2025-06-19 19:47:39.448 INFO  [main] com.hhu.javawebcrawler.demo.DemoApplicationTests - No active profile set, falling back to 1 default profile: "default"
+2025-06-19 19:47:45.162 INFO  [main] o.s.d.r.config.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-06-19 19:47:45.687 INFO  [main] o.s.d.r.config.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 446 ms. Found 3 JPA repository interfaces.
+2025-06-19 19:47:51.191 INFO  [main] org.hibernate.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-06-19 19:47:51.779 INFO  [main] org.hibernate.Version - HHH000412: Hibernate ORM core version 6.4.1.Final
+2025-06-19 19:47:52.136 INFO  [main] o.hibernate.cache.internal.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-06-19 19:47:53.535 INFO  [main] o.s.o.j.persistenceunit.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-06-19 19:47:53.681 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-06-19 19:47:54.561 INFO  [main] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3823d3d1
+2025-06-19 19:47:54.565 INFO  [main] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-06-19 19:47:57.321 INFO  [main] o.h.e.t.jta.platform.internal.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-06-19 19:47:57.510 INFO  [main] o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-06-19 19:47:57.585 INFO  [main] com.hhu.javawebcrawler.demo.DemoApplication - Java Web爬虫系统初始化...
+2025-06-19 19:47:57.619 WARN  [main] com.hhu.javawebcrawler.demo.DemoApplication - 字体文件不存在: static/fonts/方正黑体-简体.TTF
+2025-06-19 19:47:57.644 WARN  [main] com.hhu.javawebcrawler.demo.DemoApplication - 字体文件不存在: static/fonts/方正楷体-简体.ttf
+2025-06-19 19:47:57.644 WARN  [main] com.hhu.javawebcrawler.demo.DemoApplication - 字体文件不存在: static/fonts/方正仿宋-简体.TTF
+2025-06-19 19:47:57.644 WARN  [main] com.hhu.javawebcrawler.demo.DemoApplication - 字体文件不存在: static/fonts/方正书宋-简体.ttf
+2025-06-19 19:47:57.644 INFO  [main] com.hhu.javawebcrawler.demo.DemoApplication - 文档导出功能初始化完成
+2025-06-19 19:47:58.969 INFO  [main] o.s.data.jpa.repository.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-06-19 19:48:00.818 INFO  [main] c.h.j.demo.config.DocumentExportConfig - 字体文件已加载: 黑体 -> static/fonts/方正黑体-简体.TTF
+2025-06-19 19:48:00.818 INFO  [main] c.h.j.demo.config.DocumentExportConfig - 字体文件已加载: 楷体 -> static/fonts/方正楷体-简体.ttf
+2025-06-19 19:48:00.818 INFO  [main] c.h.j.demo.config.DocumentExportConfig - 字体文件已加载: 宋体 -> static/fonts/方正书宋-简体.ttf
+2025-06-19 19:48:00.818 INFO  [main] c.h.j.demo.config.DocumentExportConfig - 字体文件已加载: 仿宋 -> static/fonts/方正仿宋-简体.TTF
+2025-06-19 19:48:00.848 INFO  [main] c.h.j.demo.config.DocumentExportConfig - 文档导出配置已加载
+2025-06-19 19:48:00.864 INFO  [main] c.h.javawebcrawler.demo.service.FileExportService - 文件导出服务已初始化，加载了4种字体
+2025-06-19 19:48:02.018 WARN  [main] o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-06-19 19:48:02.272 INFO  [main] o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsServiceImpl
+2025-06-19 19:48:02.848 INFO  [main] o.s.b.a.web.servlet.WelcomePageHandlerMapping - Adding welcome page: class path resource [static/index.html]
+2025-06-19 19:48:04.251 INFO  [main] o.s.security.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@74a71d7d, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@4ee3c362, org.springframework.security.web.context.SecurityContextHolderFilter@24e1eb55, org.springframework.security.web.header.HeaderWriterFilter@43a661f5, org.springframework.web.filter.CorsFilter@437266d9, org.springframework.security.web.authentication.logout.LogoutFilter@797618c3, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@678f9023, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@6712d116, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@115907f7, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@1b3bdde1, org.springframework.security.web.access.ExceptionTranslationFilter@6cfaeeee, org.springframework.security.web.access.intercept.AuthorizationFilter@4bc3a3fc]
+2025-06-19 19:48:05.005 WARN  [main] o.s.b.a.t.ThymeleafAutoConfiguration$DefaultTemplateResolverConfiguration - Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-06-19 19:48:05.463 INFO  [main] com.hhu.javawebcrawler.demo.DemoApplicationTests - Started DemoApplicationTests in 31.048 seconds (process running for 38.852)
+2025-06-19 19:48:07.930 INFO  [SpringApplicationShutdownHook] o.s.orm.jpa.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-06-19 19:48:07.950 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-06-19 19:48:08.057 INFO  [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

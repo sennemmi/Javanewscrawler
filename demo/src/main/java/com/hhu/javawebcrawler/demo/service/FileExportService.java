@@ -104,7 +104,7 @@ public class FileExportService {
         
         return createWord(newsData, defaultLineSpacing, defaultTitleFontSize, defaultHeading1FontSize,
                 defaultHeading2FontSize, defaultHeading3FontSize, defaultTextFontSize,
-                defaultCaptionFontSize, defaultFooterFontSize);
+                defaultCaptionFontSize, defaultFooterFontSize, null);
     }
 
     /**
@@ -130,13 +130,13 @@ public class FileExportService {
         int footerFontSize = Math.max(textFontSize - 4, 8);
 
         return createWord(newsData, lineSpacing, titleFontSize, heading1FontSize, heading2FontSize,
-                heading3FontSize, textFontSize, captionFontSize, footerFontSize);
+                heading3FontSize, textFontSize, captionFontSize, footerFontSize, null);
     }
 
     /**
-     * 创建 Word 文档 (.docx)，支持完全自定义所有元素的字体大小和行间距
+     * 创建 Word 文档 (.docx)，支持完全自定义所有元素的字体大小、行间距和字体
      * <p>
-     * 提供最大的灵活性，允许单独设置每种元素的字体大小。
+     * 提供最大的灵活性，允许单独设置每种元素的字体大小和字体。
      * 适合对文档格式有精细要求的场景。
      * </p>
      * 
@@ -149,14 +149,44 @@ public class FileExportService {
      * @param textFontSize 正文字体大小（像素）
      * @param captionFontSize 图片说明/元数据字体大小（像素）
      * @param footerFontSize 页脚字体大小（像素）
+     * @param fontFamily 自定义字体名称
      * @return Word文档的字节数组
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createWord(NewsData newsData, float lineSpacing, int titleFontSize, int heading1FontSize,
                              int heading2FontSize, int heading3FontSize, int textFontSize,
-                             int captionFontSize, int footerFontSize) throws IOException {
+                             int captionFontSize, int footerFontSize, String fontFamily) throws IOException {
         try (XWPFDocument document = new XWPFDocument();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            // 解析自定义字体名称
+            String titleFontName = "黑体";  // 默认标题字体
+            String textFontName = "宋体";   // 默认正文字体
+            
+            // 如果提供了自定义字体，解析出纯字体名称（去除CSS样式部分）
+            if (fontFamily != null && !fontFamily.isEmpty()) {
+                // 处理前端CSS样式值，如 'Microsoft YaHei', sans-serif 或 '方正书宋-简体', serif
+                String cleanFontName = fontFamily.replaceAll("['\"\\s]", "")  // 移除引号和空格
+                                               .split(",")[0];               // 取逗号前的主字体名
+                
+                // 映射到实际可用的字体名称
+                if (cleanFontName.contains("书宋")) {
+                    textFontName = "宋体";
+                    titleFontName = "宋体";
+                } else if (cleanFontName.contains("仿宋")) {
+                    textFontName = "仿宋";
+                    titleFontName = "仿宋";
+                } else if (cleanFontName.contains("黑体")) {
+                    textFontName = "黑体";
+                    titleFontName = "黑体";
+                } else if (cleanFontName.contains("楷体")) {
+                    textFontName = "楷体";
+                    titleFontName = "楷体";
+                }
+                
+                logger.debug("使用自定义字体: {}, 映射为标题字体: {}, 正文字体: {}", 
+                          fontFamily, titleFontName, textFontName);
+            }
 
             // 添加文档标题
             XWPFParagraph titleParagraph = document.createParagraph();
@@ -166,7 +196,7 @@ public class FileExportService {
             titleRun.setText(newsData.getTitle());
             titleRun.setBold(true);
             titleRun.setFontSize(titleFontSize);
-            titleRun.setFontFamily("黑体");
+            titleRun.setFontFamily(titleFontName);
             titleRun.addBreak();
 
             // 添加元数据（来源和发布时间）
@@ -189,14 +219,14 @@ public class FileExportService {
 
             // 处理正文段落和图片
             processHtmlContentForWord(document, htmlDoc, lineSpacing, heading1FontSize, heading2FontSize,
-                    heading3FontSize, textFontSize, captionFontSize);
+                    heading3FontSize, textFontSize, captionFontSize, textFontName, titleFontName);
 
             // 添加页脚
             XWPFParagraph footerParagraph = document.createParagraph();
             footerParagraph.setAlignment(ParagraphAlignment.CENTER);
             footerParagraph.setSpacingBefore((int) (footerFontSize * lineSpacing * 20)); // 设置段前间距
             XWPFRun footerRun = footerParagraph.createRun();
-            footerRun.setText("——— 由Java Web爬虫系统生成 ———");
+            footerRun.setText("——— 文档结束 ———");
             footerRun.setFontSize(footerFontSize);
             footerRun.setColor("A9A9A9");
 
@@ -219,21 +249,25 @@ public class FileExportService {
      * @param heading3FontSize 三级标题字体大小
      * @param textFontSize 正文字体大小
      * @param captionFontSize 图片说明字体大小
+     * @param textFontName 正文使用的字体名称
+     * @param titleFontName 标题使用的字体名称
      */
     private void processHtmlContentForWord(XWPFDocument document, org.jsoup.nodes.Document htmlDoc,
                                            float lineSpacing, int heading1FontSize, int heading2FontSize,
-                                           int heading3FontSize, int textFontSize, int captionFontSize) {
+                                           int heading3FontSize, int textFontSize, int captionFontSize,
+                                           String textFontName, String titleFontName) {
         Elements elements = htmlDoc.select("p, div.img_wrapper, h1, h2, h3, h4, h5, h6, ul, ol, li");
 
         for (Element element : elements) {
             if (element.is("div.img_wrapper")) {
-                processImageForWord(document, element, captionFontSize, lineSpacing);
+                processImageForWord(document, element, captionFontSize, lineSpacing, textFontName);
             } else if (element.is("p")) {
-                processParagraphForWord(document, element, textFontSize, lineSpacing);
+                processParagraphForWord(document, element, textFontSize, lineSpacing, textFontName);
             } else if (element.is("h1, h2, h3, h4, h5, h6")) {
-                processHeadingForWord(document, element, heading1FontSize, heading2FontSize, heading3FontSize, lineSpacing);
+                processHeadingForWord(document, element, heading1FontSize, heading2FontSize, 
+                                     heading3FontSize, lineSpacing, titleFontName);
             } else if (element.is("ul, ol")) {
-                processListForWord(document, element, textFontSize, lineSpacing);
+                processListForWord(document, element, textFontSize, lineSpacing, textFontName);
             }
         }
     }
@@ -248,8 +282,10 @@ public class FileExportService {
      * @param element HTML段落元素
      * @param textFontSize 文本字体大小
      * @param lineSpacing 行间距倍数
+     * @param fontName 使用的字体名称
      */
-    private void processParagraphForWord(XWPFDocument document, Element element, int textFontSize, float lineSpacing) {
+    private void processParagraphForWord(XWPFDocument document, Element element, int textFontSize, 
+                                        float lineSpacing, String fontName) {
         String text = element.text().trim();
         if (!text.isEmpty()) {
             XWPFParagraph paragraph = document.createParagraph();
@@ -259,7 +295,7 @@ public class FileExportService {
             XWPFRun run = paragraph.createRun();
             run.setText(text);
             run.setFontSize(textFontSize);
-            run.setFontFamily("宋体");
+            run.setFontFamily(fontName);
             run.addBreak();
         }
     }
@@ -276,10 +312,12 @@ public class FileExportService {
      * @param heading2FontSize 二级标题字体大小
      * @param heading3FontSize 三级标题字体大小
      * @param lineSpacing 行间距倍数
+     * @param fontName 使用的字体名称
      */
     private void processHeadingForWord(XWPFDocument document, Element element,
                                        int heading1FontSize, int heading2FontSize,
-                                       int heading3FontSize, float lineSpacing) {
+                                       int heading3FontSize, float lineSpacing,
+                                       String fontName) {
         String text = element.text().trim();
         if (!text.isEmpty()) {
             XWPFParagraph paragraph = document.createParagraph();
@@ -302,7 +340,7 @@ public class FileExportService {
                 run.setFontSize(heading3FontSize - 1);
             }
 
-            run.setFontFamily("黑体");
+            run.setFontFamily(fontName);
             run.addBreak();
         }
     }
@@ -317,8 +355,10 @@ public class FileExportService {
      * @param listElement HTML列表元素
      * @param textFontSize 文本字体大小
      * @param lineSpacing 行间距倍数
+     * @param fontName 使用的字体名称
      */
-    private void processListForWord(XWPFDocument document, Element listElement, int textFontSize, float lineSpacing) {
+    private void processListForWord(XWPFDocument document, Element listElement, int textFontSize, 
+                                   float lineSpacing, String fontName) {
         Elements items = listElement.select("li");
         boolean isOrdered = listElement.is("ol");
         int counter = 1;
@@ -337,7 +377,7 @@ public class FileExportService {
             }
 
             run.setFontSize(textFontSize);
-            run.setFontFamily("宋体");
+            run.setFontFamily(fontName);
             run.addBreak();
         }
     }
@@ -353,8 +393,10 @@ public class FileExportService {
      * @param imgWrapper HTML图片容器元素
      * @param captionFontSize 图片说明字体大小
      * @param lineSpacing 行间距倍数
+     * @param fontName 使用的字体名称
      */
-    private void processImageForWord(XWPFDocument document, Element imgWrapper, int captionFontSize, float lineSpacing) {
+    private void processImageForWord(XWPFDocument document, Element imgWrapper, int captionFontSize, 
+                                    float lineSpacing, String fontName) {
         Element img = imgWrapper.selectFirst("img");
         if (img != null) {
             String imgSrc = img.attr("src");
@@ -397,6 +439,7 @@ public class FileExportService {
                     captionRun.setText(imgAlt);
                     captionRun.setItalic(true);
                     captionRun.setFontSize(captionFontSize);
+                    captionRun.setFontFamily(fontName);
                     captionRun.setColor("505050");
                     captionRun.addBreak();
                 }
@@ -433,7 +476,7 @@ public class FileExportService {
         
         return createPdf(newsData, defaultLineSpacing, defaultTitleFontSize, defaultHeading1FontSize,
                 defaultHeading2FontSize, defaultHeading3FontSize, defaultTextFontSize,
-                defaultCaptionFontSize, defaultFooterFontSize);
+                defaultCaptionFontSize, defaultFooterFontSize, null);
     }
 
     /**
@@ -468,13 +511,13 @@ public class FileExportService {
                      pdfMarginTop, pdfMarginBottom, pdfMarginLeft, pdfMarginRight);
 
         return createPdf(newsData, lineSpacing, titleFontSize, heading1FontSize, heading2FontSize,
-                heading3FontSize, textFontSize, captionFontSize, footerFontSize);
+                heading3FontSize, textFontSize, captionFontSize, footerFontSize, null);
     }
 
     /**
-     * 创建 PDF 文档，支持完全自定义所有元素的字体大小和行间距
+     * 创建 PDF 文档，支持完全自定义所有元素的字体大小、行间距和字体
      * <p>
-     * 提供最大的灵活性，允许单独设置每种元素的字体大小。
+     * 提供最大的灵活性，允许单独设置每种元素的字体大小和字体。
      * 适合对文档格式有精细要求的场景。
      * </p>
      * 
@@ -487,17 +530,66 @@ public class FileExportService {
      * @param textFontSize 正文字体大小（像素）
      * @param captionFontSize 图片说明/元数据字体大小（像素）
      * @param footerFontSize 页脚字体大小（像素）
+     * @param fontFamily 自定义字体名称
      * @return PDF文档的字节数组
      * @throws IOException 如果文档创建过程中出现IO错误
      */
     public byte[] createPdf(NewsData newsData, float lineSpacing, int titleFontSize, int heading1FontSize,
                              int heading2FontSize, int heading3FontSize, int textFontSize,
-                             int captionFontSize, int footerFontSize) throws IOException {
+                             int captionFontSize, int footerFontSize, String fontFamily) throws IOException {
         
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            // 加载中文字体
-            PdfFont font = loadChineseFont();
-            PdfFont boldFont = loadChineseBoldFont();
+            // 根据字体名称选择合适的字体
+            PdfFont font;
+            PdfFont boldFont;
+            
+            // 如果提供了自定义字体，尝试使用对应的字体
+            if (fontFamily != null && !fontFamily.isEmpty()) {
+                // 解析字体名称（去除CSS样式部分）
+                String cleanFontName = fontFamily.replaceAll("['\"\\s]", "").split(",")[0];
+                
+                // 根据字体名称选择对应的字体文件
+                String fontPath = null;
+                if (cleanFontName.contains("书宋")) {
+                    fontPath = fontMappings.get("宋体");
+                } else if (cleanFontName.contains("仿宋")) {
+                    fontPath = fontMappings.get("仿宋");
+                } else if (cleanFontName.contains("黑体")) {
+                    fontPath = fontMappings.get("黑体");
+                } else if (cleanFontName.contains("楷体")) {
+                    fontPath = fontMappings.get("楷体");
+                }
+                
+                logger.debug("尝试使用自定义字体: {}, 映射路径: {}", cleanFontName, fontPath);
+                
+                // 尝试使用自定义字体，如果失败则回退到默认字体
+                try {
+                    if (fontPath != null) {
+                        ClassPathResource resource = new ClassPathResource(fontPath);
+                        if (resource.exists()) {
+                            font = PdfFontFactory.createFont(resource.getURL().toString(), PdfEncodings.IDENTITY_H);
+                            boldFont = font;
+                            logger.debug("成功加载自定义字体: {}", fontPath);
+                        } else {
+                            logger.warn("自定义字体文件不存在: {}, 使用默认字体", fontPath);
+                            font = loadChineseFont();
+                            boldFont = loadChineseBoldFont();
+                        }
+                    } else {
+                        logger.warn("未找到与 {} 匹配的字体映射, 使用默认字体", cleanFontName);
+                        font = loadChineseFont();
+                        boldFont = loadChineseBoldFont();
+                    }
+                } catch (Exception e) {
+                    logger.warn("加载自定义字体失败: {}, 使用默认字体", e.getMessage());
+                    font = loadChineseFont();
+                    boldFont = loadChineseBoldFont();
+                }
+            } else {
+                // 如果没有提供字体名称，使用默认中文字体
+                font = loadChineseFont();
+                boldFont = loadChineseBoldFont();
+            }
             
             // 使用PDF特定的配置
             Float pdfMarginTop = (Float)documentConfig.getOrDefault("pdfMarginTop", 36f);
@@ -544,7 +636,7 @@ public class FileExportService {
 
             // 添加页脚
             document.add(new Paragraph("\n"));
-            Paragraph footer = new Paragraph("——— 由Java Web爬虫系统生成 ———")
+            Paragraph footer = new Paragraph("——— 文档结束 ———")
                     .setFont(font)
                     .setFontSize(footerFontSize)
                     .setFontColor(ColorConstants.DARK_GRAY)

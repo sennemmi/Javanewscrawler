@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="styles/components.css">
     <link rel="stylesheet" href="styles/home.css">
     <link rel="stylesheet" href="styles/result.css">
+    <!-- 字体CSS -->
+    <link rel="stylesheet" href="styles/fonts.css">
+    <!-- 数据分析 CSS -->
+    <link rel="stylesheet" href="css/analysis.css">
 </head>
 <body>
     <!-- 主题切换按钮 (位置已由CSS调整) -->
@@ -56,13 +60,10 @@
                         <div class="form-group">
                             <label for="fontFamily">字体选择</label>
                             <select id="fontFamily" class="form-select">
-                                <option value="Arial, sans-serif">Arial</option>
-                                <option value="'Times New Roman', serif">Times New Roman</option>
-                                <option value="'Microsoft YaHei', sans-serif" selected>微软雅黑</option>
-                                <option value="'SimSun', serif">宋体</option>
-                                <option value="'SimHei', sans-serif">黑体</option>
-                                <option value="'KaiTi', serif">楷体</option>
-                                <option value="'FangSong', serif">仿宋</option>
+                                <option value="'方正书宋-简体', serif" selected>方正书宋-简体</option>
+                                <option value="'方正仿宋-简体', serif">方正仿宋-简体</option>
+                                <option value="'方正黑体-简体', sans-serif">方正黑体-简体</option>
+                                <option value="'方正楷体-简体', serif">方正楷体-简体</option>
                             </select>
                         </div>
                         
@@ -305,9 +306,84 @@
                     <!-- 结果将通过 JS 动态填充到这里 -->
                 </div>
             </div>
+            
+            <!-- 数据分析视图 (默认隐藏) -->
+            <div class="result-page" id="analysisView" style="display: none;">
+                <div class="result-page-header">
+                    <button class="result-page-btn back-btn" id="analysisBackBtn" title="返回结果">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5m7 7l-7-7 7-7"></path>
+                        </svg>
+                        <span>返回</span>
+                    </button>
+                </div>
+                <div class="analysis-container">
+                    <div class="analysis-header">
+                        <h1 class="analysis-title">数据分析</h1>
+                    </div>
+                    
+                    <!-- 上方图表区域 -->
+                    <div class="analysis-top-cards" id="analysisTopCardsContainer">
+                        <!-- 词云卡片 -->
+                        <div class="analysis-card" data-type="wordCloud">
+                            <div class="card-header">
+                                <div class="card-title">词云可视化</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="wordcloud-container" id="wordCloudContainer"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 热词排行榜卡片 -->
+                        <div class="analysis-card" data-type="hotWords">
+                            <div class="card-header">
+                                <div class="card-title">热词排行榜</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="hot-words-list" id="hotWordsList"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 来源分布卡片 -->
+                        <div class="analysis-card" data-type="sourceDistribution">
+                            <div class="card-header">
+                                <div class="card-title">内容来源分布</div>
+                            </div>
+                            <div class="card-content">
+                                <div class="source-chart-container" id="sourceChartContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 下方趋势图区域 -->
+                    <div class="trend-section">
+                        <h2 class="trend-section-title">关键词时间趋势分析</h2>
+                        <div class="keyword-search-form">
+                            <input type="text" class="keyword-input" id="trendKeywordInput" placeholder="输入关键词...">
+                            <button class="search-btn" id="trendSearchBtn">分析</button>
+                            <div class="time-unit-selector">
+                                <label for="timeUnitDay">
+                                    <input type="radio" id="timeUnitDay" name="timeUnit" value="day" checked> 日
+                                </label>
+                                <label for="timeUnitHour6">
+                                    <input type="radio" id="timeUnitHour6" name="timeUnit" value="hour6"> 6小时
+                                </label>
+                                <label for="timeUnitHour12">
+                                    <input type="radio" id="timeUnitHour12" name="timeUnit" value="hour12"> 12小时
+                                </label>
+                            </div>
+                        </div>
+                        <div class="trend-chart-container" id="trendChartContainer"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
+    <script src="analysis.js"></script>
+    <!-- 引入数据可视化库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
 </body>
 </html>

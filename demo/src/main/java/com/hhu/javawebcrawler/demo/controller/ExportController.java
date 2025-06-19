@@ -62,6 +62,7 @@ public class ExportController {
      * @param h3FontSize (可选)覆盖三级标题字体大小，默认为textFontSize+2
      * @param captionFontSize (可选)覆盖图片注释和元数据字体大小，默认为max(textFontSize-2, 10)
      * @param footerFontSize (可选)覆盖页脚字体大小，默认为max(textFontSize-4, 8)
+     * @param fontFamily (可选)字体，默认为"Arial"
      * @return 文件下载流，附带适当的Content-Type和Content-Disposition头
      */
     @GetMapping("/export")
@@ -75,9 +76,10 @@ public class ExportController {
             @RequestParam(required = false) Integer h2FontSize,
             @RequestParam(required = false) Integer h3FontSize,
             @RequestParam(required = false) Integer captionFontSize,
-            @RequestParam(required = false) Integer footerFontSize
+            @RequestParam(required = false) Integer footerFontSize,
+            @RequestParam(required = false) String fontFamily
     ) {
-        logger.info("收到文件导出请求: URL={}, 格式={}, 文本大小={}, 行间距={}", url, format, textFontSize, lineSpacing);
+        logger.info("收到文件导出请求: URL={}, 格式={}, 文本大小={}, 行间距={}, 字体={}", url, format, textFontSize, lineSpacing, fontFamily);
         
         try {
             // 验证参数
@@ -146,15 +148,15 @@ public class ExportController {
 
             // 根据格式生成不同类型的文件
             if ("word".equalsIgnoreCase(format)) {
-                logger.debug("生成Word文档，标题字体大小: {}, 正文字体大小: {}", finalTitleSize, textFontSize);
+                logger.debug("生成Word文档，标题字体大小: {}, 正文字体大小: {}, 字体: {}", finalTitleSize, textFontSize, fontFamily);
                 fileContent = fileExportService.createWord(newsData, lineSpacing, finalTitleSize, finalH1Size,
-                        finalH2Size, finalH3Size, textFontSize, finalCaptionSize, finalFooterSize);
+                        finalH2Size, finalH3Size, textFontSize, finalCaptionSize, finalFooterSize, fontFamily);
                 contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
                 fileExtension = ".docx";
             } else if ("pdf".equalsIgnoreCase(format)) {
-                logger.debug("生成PDF文档，标题字体大小: {}, 正文字体大小: {}", finalTitleSize, textFontSize);
+                logger.debug("生成PDF文档，标题字体大小: {}, 正文字体大小: {}, 字体: {}", finalTitleSize, textFontSize, fontFamily);
                 fileContent = fileExportService.createPdf(newsData, lineSpacing, finalTitleSize, finalH1Size,
-                        finalH2Size, finalH3Size, textFontSize, finalCaptionSize, finalFooterSize);
+                        finalH2Size, finalH3Size, textFontSize, finalCaptionSize, finalFooterSize, fontFamily);
                 contentType = "application/pdf";
                 fileExtension = ".pdf";
             } else {
